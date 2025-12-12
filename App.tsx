@@ -215,7 +215,7 @@ function App() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start max-w-7xl mx-auto">
           
           {/* Left Column: Image Input */}
-          <div className={`transition-all duration-500 ${selectedFile || appState === AppState.SUCCESS ? 'col-span-1' : 'col-span-1 lg:col-span-2 lg:max-w-xl lg:mx-auto'}`}>
+          <div className={`transition-all duration-500 ${selectedFile || appState === AppState.SUCCESS ? 'col-span-1 lg:sticky lg:top-28' : 'col-span-1 lg:col-span-2 lg:max-w-xl lg:mx-auto'}`}>
             {!selectedFile ? (
                // If we have a successful result (e.g. from share link) but no file, show a small "Upload New" placeholder or the upload zone
                appState === AppState.SUCCESS ? (
@@ -287,10 +287,10 @@ function App() {
 
           {/* Right Column: Results */}
           {(appState === AppState.ANALYZING || appState === AppState.SUCCESS) && (
-            <div ref={resultRef} className="animate-in fade-in slide-in-from-bottom-8 duration-700">
+            <div ref={resultRef} className="animate-in fade-in slide-in-from-bottom-8 duration-700 pb-16">
                <div className="bg-slate-900 border border-slate-700 rounded-2xl p-6 lg:p-8 shadow-2xl relative overflow-hidden group">
                   {/* Background decoration */}
-                  <div className="absolute top-0 right-0 p-4 opacity-10">
+                  <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
                      <svg className="w-32 h-32 text-cyan-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0L24 12L12 24L0 12L12 0Z" /></svg>
                   </div>
 
@@ -359,8 +359,8 @@ function App() {
                          >
                            {copyFeedback ? (
                              <>
-                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                               <span>Copied</span>
+                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                               <span>Copy</span>
                              </>
                            ) : (
                              <>
@@ -407,6 +407,12 @@ function App() {
           )}
         </div>
       </main>
+
+      <footer className="py-6 text-center border-t border-slate-900/50">
+        <p className="text-slate-600 text-xs font-mono tracking-[0.2em] hover:text-cyan-500/50 transition-colors cursor-default">
+          CREATED BY EKKO
+        </p>
+      </footer>
     </div>
   );
 }
