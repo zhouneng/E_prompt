@@ -3,6 +3,7 @@ import { Header } from './components/Header';
 import { UploadZone } from './components/UploadZone';
 import { Button } from './components/Button';
 import { HistoryPanel } from './components/HistoryPanel';
+import { SettingsModal } from './components/SettingsModal';
 import { generateImagePrompt } from './services/geminiService';
 import { AppState, ErrorState, HistoryItem } from './types';
 
@@ -16,6 +17,12 @@ function App() {
   const [shareFeedback, setShareFeedback] = useState(false);
   const [activeTab, setActiveTab] = useState<'ENGLISH' | 'CHINESE'>('ENGLISH');
   const resultRef = useRef<HTMLDivElement>(null);
+
+  // Settings State
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [apiKey, setApiKey] = useState<string>(() => {
+    return localStorage.getItem('gemini_api_key') || '';
+  });
 
   // History State
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
@@ -84,6 +91,12 @@ function App() {
     return { english: generatedPrompt, chinese: null };
   }, [generatedPrompt]);
 
+  const handleSaveApiKey = (key: string) => {
+    setApiKey(key);
+    localStorage.setItem('gemini_api_key', key);
+    setError(null); // Clear potential missing key errors
+  };
+
   const handleFileSelect = (file: File) => {
     setSelectedFile(file);
     const url = URL.createObjectURL(file);
@@ -97,12 +110,19 @@ function App() {
 
   const handleAnalyze = async () => {
     if (!selectedFile) return;
+    
+    // Check API Key
+    if (!apiKey) {
+      setError({ message: "API Key required. Please configure it in Settings." });
+      setIsSettingsOpen(true);
+      return;
+    }
 
     setAppState(AppState.ANALYZING);
     setError(null);
 
     try {
-      const prompt = await generateImagePrompt(selectedFile);
+      const prompt = await generateImagePrompt(selectedFile, apiKey);
       setGeneratedPrompt(prompt);
       setAppState(AppState.SUCCESS);
       
@@ -157,7 +177,10 @@ function App() {
 
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col selection:bg-cyan-500/30 selection:text-cyan-200">
-      <Header onToggleHistory={() => setIsHistoryOpen(true)} />
+      <Header 
+        onToggleHistory={() => setIsHistoryOpen(true)} 
+        onOpenSettings={() => setIsSettingsOpen(true)}
+      />
 
       <HistoryPanel 
         isOpen={isHistoryOpen} 
@@ -165,6 +188,13 @@ function App() {
         history={history}
         onCopy={handleCopy}
         onClear={clearHistory}
+      />
+
+      <SettingsModal 
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        onSave={handleSaveApiKey}
+        currentKey={apiKey}
       />
 
       <main className="flex-grow container mx-auto px-4 py-8 lg:py-12">

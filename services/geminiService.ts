@@ -20,10 +20,9 @@ const fileToGenerativePart = async (file: File) => {
   });
 };
 
-export const generateImagePrompt = async (imageFile: File): Promise<string> => {
-  const apiKey = process.env.API_KEY;
+export const generateImagePrompt = async (imageFile: File, apiKey: string): Promise<string> => {
   if (!apiKey) {
-    throw new Error("API Key is missing in environment variables.");
+    throw new Error("API Key is missing. Please configure it in Settings.");
   }
 
   const ai = new GoogleGenAI({ apiKey });
