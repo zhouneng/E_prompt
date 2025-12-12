@@ -1,0 +1,5 @@
+{
+  "name": "Gemini Reverse Prompt Engineer",
+  "description": "A professional-grade tool that analyzes images using forensic-level detail to generate high-fidelity text-to-image prompts for Midjourney, DALL-E, and Stable Diffusion.",
+  "requestFramePermissions": []
+}
