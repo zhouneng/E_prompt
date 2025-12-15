@@ -1,5 +1,4 @@
-
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, HarmCategory, HarmBlockThreshold } from "@google/genai";
 import { SYSTEM_INSTRUCTION } from "../constants";
 
 // Helper to get API Key
@@ -39,11 +38,11 @@ const analyzeProductReference = async (apiKey: string, files: File[]): Promise<s
       contents: {
         parts: [
           ...parts,
-          { text: "Analyze the MAIN SUBJECT/PRODUCT in this image for a product photography generation task.\n\nOUTPUT REQUIREMENTS:\n1. Describe the physical appearance in extreme detail (Color, Material, Texture, Shape).\n2. Transcribe any visible LOGO or TEXT exactly.\n3. Describe specific distinguishing features (buttons, caps, handles, surface finish).\n\nOutput ONLY the visual description paragraph." }
+          { text: "You are a Forensic Product Analyst. Analyze the MAIN SUBJECT in this image for a high-fidelity 3D reconstruction task.\n\nOUTPUT REQUIREMENTS:\n1. VISUAL DNA: Describe the exact shape, material properties (e.g., brushed aluminum, matte plastic), colors (hex codes if approximating), and textures.\n2. BRANDING IDENTITY: Transcribe EVERY visible logo, text, label, or graphic EXACTLY as it appears. Note fonts and positioning.\n3. STRUCTURAL DETAILS: List buttons, seams, caps, handles, ports, or unique geometry.\n\nOUTPUT FORMAT: A single, dense, highly descriptive paragraph focusing ONLY on the product. Do not describe the background." }
         ]
       },
       config: {
-        temperature: 0.1, // Low temperature for factual description
+        temperature: 0.2, // Low temperature for precision
       }
     });
     return response.text || "";
@@ -121,14 +120,12 @@ export const generateImagesFromPrompt = async (
   const ai = new GoogleGenAI({ apiKey });
   
   // Map user-requested ratios to Gemini supported ratios
-  // Gemini 2.5 Flash Image supports: "1:1", "3:4", "4:3", "9:16", "16:9"
   const ratioMap: Record<string, string> = {
     "1:1": "1:1",
     "4:3": "4:3",
     "3:4": "3:4",
     "16:9": "16:9",
     "9:16": "9:16",
-    // Mapping unsupported to closest supported
     "21:9": "16:9",
     "3:2": "4:3",
     "2:3": "3:4",
@@ -146,48 +143,46 @@ export const generateImagesFromPrompt = async (
   let finalPrompt = promptText;
   
   // Handle Consistency/Replacement Logic
-  // Optimization: If Product Mode is on, first analyze the product to get a strict text description.
   if ((replaceProduct || maintainSubject) && referenceImages.length > 0) {
     const productDescription = await analyzeProductReference(apiKey, referenceImages);
 
     if (replaceProduct) {
-      finalPrompt = `[PRODUCT REPLACEMENT MODE - STRICT INTEGRITY]
-CRITICAL TASK: Render the specific product described below into the scene.
+      finalPrompt = `[TASK: PRODUCT REPLACEMENT]
+[PRIORITY: HIGH FIDELITY PRODUCT RENDERING]
 
-SOURCE PRODUCT VISUAL DESCRIPTION (From Reference Image):
+SOURCE PRODUCT SPECIFICATIONS (From Reference Image):
 "${productDescription}"
 
-TARGET SCENE DESCRIPTION:
+TARGET SCENE:
 "${promptText}"
 
 INSTRUCTIONS:
-1. SUBJECT: You MUST generate the product exactly as described in the "SOURCE PRODUCT VISUAL DESCRIPTION". 
-   - Preserve the brand logos, text, colors, and materials.
-   - The product in the reference image IS the subject. Do not hallucinate a different product.
-2. PLACEMENT: Place this exact product into the "TARGET SCENE".
-3. LIGHTING/INTEGRATION: Apply the lighting and mood of the target scene to the product, but do not change the product's intrinsic physical properties.
-4. COMPOSITION: If a composition reference is provided, use its layout but replace the placeholder object with this product.
+1. IDENTIFY the object in the TARGET SCENE that needs to be replaced.
+2. REPLACE it with the SOURCE PRODUCT described above.
+3. APPEARANCE: The inserted product MUST look exactly like the reference image: Same details, same logos, same materials.
+4. INTEGRATION: Apply the lighting, shadows, and reflections of the TARGET SCENE to the inserted product.
 `;
     } else {
       // maintainSubject
-      finalPrompt = `[STRICT REFERENCE MODE - SUBJECT PRESERVATION]
-CRITICAL TASK: Generate a variation of the provided reference subject.
+      finalPrompt = `[TASK: PRODUCT PHOTOGRAPHY - STRICT CONSISTENCY]
+[REFERENCE IMAGE IS GROUND TRUTH]
 
-SUBJECT VISUAL DESCRIPTION (Derived from Reference):
+SUBJECT SPECIFICATIONS (MUST MATCH EXACTLY):
 "${productDescription}"
 
-NEW CONTEXT/BACKGROUND:
+SCENE / BACKGROUND DESCRIPTION:
 "${promptText}"
 
-INSTRUCTIONS:
-1. The subject in the output MUST match the "SUBJECT VISUAL DESCRIPTION" exactly.
-2. Keep the same form factor, colors, and details.
-3. Only change the background, lighting, and environment as requested by the "NEW CONTEXT".
+EXECUTION RULES:
+1. **SUBJECT INTEGRITY**: You are a photocopier for the main subject. The object in the final image must be indistinguishable from the reference image.
+2. **DETAILS**: Preserve all logos, text, button placements, and material textures found in the SUBJECT SPECIFICATIONS.
+3. **CONFLICT RESOLUTION**: If "SCENE / BACKGROUND DESCRIPTION" suggests changing the subject (e.g. "make it blue"), IGNORE IT. The reference image overrides text prompts regarding the subject's appearance.
+4. **COMPOSITION**: Place this exact subject into the environment described.
 `;
     }
   }
 
-  // Handle Composition Logic (Appended)
+  // Handle Composition Logic
   if (compositionImage) {
     const adherenceLevel = compositionStrength > 80 ? "EXTREME" : compositionStrength > 50 ? "HIGH" : "MODERATE";
     const instructionStrength = compositionStrength > 70 
@@ -204,17 +199,16 @@ ${replaceProduct ? "6. CRITICAL: The object in the composition image is just a p
 `;
   }
 
-  const promises = Array.from({ length: count }).map(async () => {
+  const generatedImages: string[] = [];
+  const errors: string[] = [];
+
+  // SEQUENTIAL EXECUTION: To avoid 429 Rate Limits and handle errors gracefully
+  for (let i = 0; i < count; i++) {
     try {
-      // Construct parts: 
-      // Order: Reference Images (Subject) -> Composition Image -> Text Prompt
-      // This helps the model process context in order.
       const parts: any[] = [...refImageParts];
-      
       if (compImagePart) {
         parts.push(compImagePart);
       }
-      
       parts.push({ text: finalPrompt });
 
       const response = await ai.models.generateContent({
@@ -225,32 +219,44 @@ ${replaceProduct ? "6. CRITICAL: The object in the composition image is just a p
         config: {
           imageConfig: {
             aspectRatio: apiRatio
-          }
+          },
+          // Add Relaxed Safety Settings to prevent false positives on image generation
+          safetySettings: [
+             { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
+             { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
+             { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
+             { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH }
+          ]
         }
       });
 
       if (response.candidates?.[0]?.content?.parts) {
+        let foundImage = false;
         for (const part of response.candidates[0].content.parts) {
           if (part.inlineData) {
-            return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+            generatedImages.push(`data:${part.inlineData.mimeType};base64,${part.inlineData.data}`);
+            foundImage = true;
+            break;
           }
         }
+        if (!foundImage) throw new Error("Model returned no image data.");
+      } else {
+        throw new Error("Empty response from model.");
       }
-      return null;
-    } catch (error) {
-      console.error("Single Image Gen Error:", error);
-      return null;
+    } catch (error: any) {
+      console.error(`Image Gen ${i+1} failed:`, error);
+      // Capture detailed error message
+      const msg = error.message || error.statusText || "Unknown error";
+      errors.push(msg);
     }
-  });
-
-  const results = await Promise.all(promises);
-  const validImages = results.filter((img): img is string => img !== null);
-
-  if (validImages.length === 0) {
-    throw new Error("Failed to generate any images.");
   }
 
-  return validImages;
+  if (generatedImages.length === 0 && errors.length > 0) {
+    // Throw the first error to be displayed in UI
+    throw new Error(`Generation Failed: ${errors[0]}`);
+  }
+
+  return generatedImages;
 };
 
 export const generateImageModification = async (imageFile: File, promptText: string, count: number = 1): Promise<string[]> => {
@@ -260,7 +266,11 @@ export const generateImageModification = async (imageFile: File, promptText: str
   const ai = new GoogleGenAI({ apiKey });
   const imagePart = await fileToGenerativePart(imageFile);
   
-  const promises = Array.from({ length: count }).map(async () => {
+  const generatedImages: string[] = [];
+  const errors: string[] = [];
+
+  // SEQUENTIAL EXECUTION
+  for (let i = 0; i < count; i++) {
     try {
       const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash-image',
@@ -269,29 +279,37 @@ export const generateImageModification = async (imageFile: File, promptText: str
             imagePart,
             { text: promptText }
           ]
+        },
+        config: {
+           safetySettings: [
+             { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
+             { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
+             { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
+             { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH }
+          ]
         }
       });
 
       if (response.candidates?.[0]?.content?.parts) {
+        let foundImage = false;
         for (const part of response.candidates[0].content.parts) {
           if (part.inlineData) {
-            return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+             generatedImages.push(`data:${part.inlineData.mimeType};base64,${part.inlineData.data}`);
+             foundImage = true;
+             break;
           }
         }
+        if (!foundImage) throw new Error("Model returned no image data.");
       }
-      return null;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Image Modification Error:", error);
-      return null;
+      errors.push(error.message || "Unknown error");
     }
-  });
-
-  const results = await Promise.all(promises);
-  const validImages = results.filter((img): img is string => img !== null);
-
-  if (validImages.length === 0) {
-    throw new Error("Failed to generate any images.");
   }
 
-  return validImages;
+  if (generatedImages.length === 0 && errors.length > 0) {
+    throw new Error(`Modification Failed: ${errors[0]}`);
+  }
+
+  return generatedImages;
 };
