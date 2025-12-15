@@ -28,7 +28,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md p-6 shadow-2xl animate-in fade-in zoom-in duration-200">
         <h2 className="text-xl font-bold text-slate-100 font-mono mb-6 flex items-center">
           <svg className="w-6 h-6 text-cyan-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -46,7 +46,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               value={key}
               onChange={(e) => setKey(e.target.value)}
               placeholder="AIza..."
-              className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-3 text-slate-100 focus:outline-none focus:border-cyan-500 font-mono text-sm transition-colors"
+              className="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-3 text-slate-200 focus:outline-none focus:border-cyan-500 font-mono text-sm transition-colors"
             />
             <p className="mt-2 text-xs text-slate-500">
               Your key is stored locally in your browser and used only for API requests.

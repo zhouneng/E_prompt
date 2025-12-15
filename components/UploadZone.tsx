@@ -42,7 +42,7 @@ export const UploadZone: React.FC<UploadZoneProps> = ({ onFileSelect }) => {
           border-2 border-dashed rounded-2xl cursor-pointer transition-all duration-300
           ${isDragging 
             ? 'border-cyan-500 bg-cyan-500/10 scale-[1.02]' 
-            : 'border-slate-700 bg-slate-900/50 hover:border-slate-500 hover:bg-slate-800/50'}
+            : 'border-slate-700 bg-slate-900 hover:border-cyan-500/50 hover:bg-slate-800'}
         `}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
@@ -69,10 +69,10 @@ export const UploadZone: React.FC<UploadZoneProps> = ({ onFileSelect }) => {
         />
         
         {/* Decorative corner accents */}
-        <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-cyan-500/50 rounded-tl-lg m-2"></div>
-        <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-cyan-500/50 rounded-tr-lg m-2"></div>
-        <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-cyan-500/50 rounded-bl-lg m-2"></div>
-        <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-cyan-500/50 rounded-br-lg m-2"></div>
+        <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-cyan-500/30 rounded-tl-lg m-2"></div>
+        <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-cyan-500/30 rounded-tr-lg m-2"></div>
+        <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-cyan-500/30 rounded-bl-lg m-2"></div>
+        <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-cyan-500/30 rounded-br-lg m-2"></div>
       </label>
     </div>
   );
