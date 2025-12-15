@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, HarmCategory, HarmBlockThreshold } from "@google/genai";
 import { SYSTEM_INSTRUCTION } from "../constants";
 
@@ -199,11 +200,8 @@ ${replaceProduct ? "6. CRITICAL: The object in the composition image is just a p
 `;
   }
 
-  const generatedImages: string[] = [];
-  const errors: string[] = [];
-
-  // SEQUENTIAL EXECUTION: To avoid 429 Rate Limits and handle errors gracefully
-  for (let i = 0; i < count; i++) {
+  // PARALLEL EXECUTION (Restored Speed)
+  const promises = Array.from({ length: count }).map(async () => {
     try {
       const parts: any[] = [...refImageParts];
       if (compImagePart) {
@@ -220,7 +218,6 @@ ${replaceProduct ? "6. CRITICAL: The object in the composition image is just a p
           imageConfig: {
             aspectRatio: apiRatio
           },
-          // Add Relaxed Safety Settings to prevent false positives on image generation
           safetySettings: [
              { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
              { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
@@ -231,32 +228,27 @@ ${replaceProduct ? "6. CRITICAL: The object in the composition image is just a p
       });
 
       if (response.candidates?.[0]?.content?.parts) {
-        let foundImage = false;
         for (const part of response.candidates[0].content.parts) {
           if (part.inlineData) {
-            generatedImages.push(`data:${part.inlineData.mimeType};base64,${part.inlineData.data}`);
-            foundImage = true;
-            break;
+            return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
           }
         }
-        if (!foundImage) throw new Error("Model returned no image data.");
-      } else {
-        throw new Error("Empty response from model.");
       }
-    } catch (error: any) {
-      console.error(`Image Gen ${i+1} failed:`, error);
-      // Capture detailed error message
-      const msg = error.message || error.statusText || "Unknown error";
-      errors.push(msg);
+      return null;
+    } catch (error) {
+      console.error("Single Image Gen Error:", error);
+      return null;
     }
+  });
+
+  const results = await Promise.all(promises);
+  const validImages = results.filter((img): img is string => img !== null);
+
+  if (validImages.length === 0) {
+    throw new Error("Failed to generate any images. Please try again or reduce quantity.");
   }
 
-  if (generatedImages.length === 0 && errors.length > 0) {
-    // Throw the first error to be displayed in UI
-    throw new Error(`Generation Failed: ${errors[0]}`);
-  }
-
-  return generatedImages;
+  return validImages;
 };
 
 export const generateImageModification = async (imageFile: File, promptText: string, count: number = 1): Promise<string[]> => {
@@ -266,11 +258,8 @@ export const generateImageModification = async (imageFile: File, promptText: str
   const ai = new GoogleGenAI({ apiKey });
   const imagePart = await fileToGenerativePart(imageFile);
   
-  const generatedImages: string[] = [];
-  const errors: string[] = [];
-
-  // SEQUENTIAL EXECUTION
-  for (let i = 0; i < count; i++) {
+  // PARALLEL EXECUTION (Restored Speed)
+  const promises = Array.from({ length: count }).map(async () => {
     try {
       const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash-image',
@@ -291,25 +280,25 @@ export const generateImageModification = async (imageFile: File, promptText: str
       });
 
       if (response.candidates?.[0]?.content?.parts) {
-        let foundImage = false;
         for (const part of response.candidates[0].content.parts) {
           if (part.inlineData) {
-             generatedImages.push(`data:${part.inlineData.mimeType};base64,${part.inlineData.data}`);
-             foundImage = true;
-             break;
+             return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
           }
         }
-        if (!foundImage) throw new Error("Model returned no image data.");
       }
-    } catch (error: any) {
+      return null;
+    } catch (error) {
       console.error("Image Modification Error:", error);
-      errors.push(error.message || "Unknown error");
+      return null;
     }
+  });
+
+  const results = await Promise.all(promises);
+  const validImages = results.filter((img): img is string => img !== null);
+
+  if (validImages.length === 0) {
+    throw new Error("Failed to modify image. Please try again.");
   }
 
-  if (generatedImages.length === 0 && errors.length > 0) {
-    throw new Error(`Modification Failed: ${errors[0]}`);
-  }
-
-  return generatedImages;
+  return validImages;
 };
