@@ -1,24 +1,36 @@
+
 import React, { useCallback, useState } from 'react';
+import { Language } from '../types';
+import { TRANSLATIONS } from '../constants';
 
 interface UploadZoneProps {
   onFileSelect: (file: File) => void;
+  language?: Language;
 }
 
-export const UploadZone: React.FC<UploadZoneProps> = ({ onFileSelect }) => {
+export const UploadZone: React.FC<UploadZoneProps> = ({ onFileSelect, language = 'EN' }) => {
   const [isDragging, setIsDragging] = useState(false);
+  const t = TRANSLATIONS[language].analyze;
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
-    setIsDragging(true);
-  }, []);
+    e.stopPropagation();
+    if (!isDragging) setIsDragging(true);
+  }, [isDragging]);
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
     e.preventDefault();
+    e.stopPropagation();
+    // Check if we are moving to a child element inside the container
+    if (e.currentTarget.contains(e.relatedTarget as Node)) {
+      return;
+    }
     setIsDragging(false);
   }, []);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     setIsDragging(false);
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       const file = e.dataTransfer.files[0];
@@ -55,10 +67,10 @@ export const UploadZone: React.FC<UploadZoneProps> = ({ onFileSelect }) => {
             </svg>
           </div>
           <p className="mb-2 text-xl font-medium text-slate-200">
-            Drop your image here
+            {t.uploadTitle}
           </p>
           <p className="text-sm text-slate-500">
-            Supports JPG, PNG, WEBP (Max 20MB)
+            {t.uploadSubtitle}
           </p>
         </div>
         <input 

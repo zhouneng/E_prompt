@@ -1,3 +1,6 @@
+
+import { Language } from './types';
+
 export const APP_TITLE = "GEMINI REVERSE ENGINEER";
 export const APP_SUBTITLE = "Forensic Image-to-Prompt Analysis System";
 
@@ -45,3 +48,201 @@ export const SYSTEM_INSTRUCTION = `
 ## Chinese Prompt
 [在此处插入中文 Prompt]
 `;
+
+export const TRANSLATIONS: Record<Language, any> = {
+  EN: {
+    nav: {
+      reverse: "Reverse Engineer",
+      txt2img: "Text to Image",
+      img2img: "Image to Image"
+    },
+    analyze: {
+      title: "Decode The Visual Matrix",
+      subtitle: "Upload any image to reverse-engineer its DNA. We analyze lighting, composition, texture, and mood to generate the ultimate prompt.",
+      uploadTitle: "Drop your image here",
+      uploadSubtitle: "Supports JPG, PNG, WEBP (Max 20MB)",
+      dropToReplace: "DROP TO REPLACE",
+      analyzing: "Analyzing Shared Prompt",
+      changeImage: "Change Image",
+      initSequence: "Init Sequence",
+      retry: "Retry",
+      generatedPrompt: "GENERATED_PROMPT",
+      analyzingText: "ANALYZING_TOPOLOGY...",
+      importToTxt2Img: "Import to Text-to-Image",
+      sessionGallery: "SESSION GALLERY",
+      restore: "RESTORE",
+      copywriting: "Smart Copywriting",
+      copywritingOn: "ON: Keep/Generate Text",
+      copywritingOff: "OFF: Ignore Text"
+    },
+    txt2img: {
+      title: "TEXT TO IMAGE",
+      subtitle: "Transform your concepts into visual reality.",
+      promptInput: "PROMPT INPUT",
+      promptPlaceholder: "Describe the image you want to generate in detail...",
+      refImages: "REFERENCE IMAGES (CONSISTENCY)",
+      optional: "OPTIONAL",
+      addRef: "ADD REF",
+      productIntegrity: "PRODUCT INTEGRITY MODE",
+      productIntegrityDesc: "Strictly preserve the exact object appearance, materials, and details from the reference image.",
+      replaceProduct: "REPLACE PRODUCT MODE",
+      replaceProductDesc: "Substitute the object described in your prompt with the uploaded product, fitting it into the prompt's scene.",
+      compRef: "COMPOSITION REFERENCE",
+      compRefDesc: "Use an image to guide the structure/layout only.",
+      strength: "STRENGTH",
+      dimensions: "DIMENSIONS",
+      presets: "PRESETS",
+      custom: "CUSTOM",
+      width: "WIDTH (PX)",
+      height: "HEIGHT (PX)",
+      closestRatio: "Closest Ratio",
+      quantity: "QUANTITY",
+      generate: "Generate Images",
+      generating: "Synthesizing...",
+      clear: "CLEAR",
+      clickToEnlarge: "CLICK TO ENLARGE",
+      processing: "PROCESSING_REQUEST"
+    },
+    img2img: {
+      title: "IMAGE TO IMAGE",
+      subtitle: "Modify, edit, or iterate on existing visuals.",
+      sourceImage: "SOURCE IMAGE",
+      modPrompt: "MODIFICATION PROMPT",
+      modPlaceholder: "Describe how you want to modify this image (e.g., 'Change the background to a cyberpunk city', 'Add a neon sign')...",
+      count: "COUNT",
+      generate: "Generate Variations",
+      processing: "Processing...",
+      outputPreview: "OUTPUT PREVIEW AREA"
+    }
+  },
+  CN: {
+    nav: {
+      reverse: "图像反推",
+      txt2img: "文生图",
+      img2img: "图生图"
+    },
+    analyze: {
+      title: "解码视觉矩阵",
+      subtitle: "上传任何图像以反向解析其DNA。我们分析光线、构图、纹理和氛围，生成终极提示词。",
+      uploadTitle: "拖拽图片到这里",
+      uploadSubtitle: "支持 JPG, PNG, WEBP (最大 20MB)",
+      dropToReplace: "拖拽以替换",
+      analyzing: "正在分析分享的提示词",
+      changeImage: "更换图片",
+      initSequence: "启动序列",
+      retry: "重试",
+      generatedPrompt: "生成的提示词",
+      analyzingText: "正在分析拓扑结构...",
+      importToTxt2Img: "导入到文生图",
+      sessionGallery: "会话画廊",
+      restore: "恢复",
+      copywriting: "智能文案",
+      copywritingOn: "开启：保留/生成文案",
+      copywritingOff: "关闭：忽略文案"
+    },
+    txt2img: {
+      title: "文生图",
+      subtitle: "将您的概念转化为视觉现实。",
+      promptInput: "提示词输入",
+      promptPlaceholder: "详细描述您想要生成的图像...",
+      refImages: "参考图像 (一致性)",
+      optional: "可选",
+      addRef: "添加参考",
+      productIntegrity: "产品完整模式",
+      productIntegrityDesc: "严格保留参考图像中的物体外观、材质和细节。",
+      replaceProduct: "产品替换模式",
+      replaceProductDesc: "用上传的产品替换提示词中描述的物体，并将其融入场景中。",
+      compRef: "构图参考 (结构)",
+      compRefDesc: "仅参考上传图片的构图、视角和布局。",
+      strength: "参考强度",
+      dimensions: "尺寸",
+      presets: "预设",
+      custom: "自定义",
+      width: "宽度 (PX)",
+      height: "高度 (PX)",
+      closestRatio: "最接近比例",
+      quantity: "数量",
+      generate: "生成图像",
+      generating: "合成中...",
+      clear: "清除",
+      clickToEnlarge: "点击放大",
+      processing: "正在处理请求"
+    },
+    img2img: {
+      title: "图生图",
+      subtitle: "修改、编辑或迭代现有的视觉效果。",
+      sourceImage: "源图像",
+      modPrompt: "修改提示词",
+      modPlaceholder: "描述您想如何修改此图像（例如：'将背景更改为赛博朋克城市'，'添加霓虹灯招牌'）...",
+      count: "数量",
+      generate: "生成变体",
+      processing: "处理中...",
+      outputPreview: "输出预览区域"
+    }
+  },
+  RU: {
+    nav: {
+      reverse: "Обратный инжиниринг",
+      txt2img: "Текст в изображение",
+      img2img: "Изображение в изображение"
+    },
+    analyze: {
+      title: "Декодировать визуальную матрицу",
+      subtitle: "Загрузите любое изображение для обратного проектирования его ДНК. Мы анализируем освещение, композицию и текстуру.",
+      uploadTitle: "Перетащите изображение сюда",
+      uploadSubtitle: "Поддержка JPG, PNG, WEBP (Макс 20MB)",
+      dropToReplace: "ПЕРЕТАЩИТЕ ДЛЯ ЗАМЕНЫ",
+      analyzing: "Анализ общего промпта",
+      changeImage: "Изменить изображение",
+      initSequence: "Запуск последовательности",
+      retry: "Повторить",
+      generatedPrompt: "СГЕНЕРИРОВАННЫЙ ПРОМПТ",
+      analyzingText: "АНАЛИЗ ТОПОЛОГИИ...",
+      importToTxt2Img: "Импорт в Текст-в-Изображение",
+      sessionGallery: "ГАЛЕРЕЯ СЕССИИ",
+      restore: "ВОССТАНОВИТЬ",
+      copywriting: "Умный Копирайтинг",
+      copywritingOn: "ВКЛ: Сохр/Ген текст",
+      copywritingOff: "ВЫКЛ: Игнор текста"
+    },
+    txt2img: {
+      title: "ТЕКСТ В ИЗОБРАЖЕНИЕ",
+      subtitle: "Превратите ваши концепции в визуальную реальность.",
+      promptInput: "ВВОД ПРОМПТА",
+      promptPlaceholder: "Подробно опишите изображение, которое вы хотите сгенерировать...",
+      refImages: "РЕФЕРЕНСНЫЕ ИЗОБРАЖЕНИЯ",
+      optional: "ОПЦИОНАЛЬНО",
+      addRef: "ДОБ. РЕФ",
+      productIntegrity: "РЕЖИМ ЦЕЛОСТНОСТИ ПРОДУКТА",
+      productIntegrityDesc: "Строго сохранять внешний вид, материалы и детали объекта с референсного изображения.",
+      replaceProduct: "РЕЖИМ ЗАМЕНЫ ПРОДУКТА",
+      replaceProductDesc: "Заменить объект, описанный в промпте, загруженным продуктом, вписав его в сцену.",
+      compRef: "РЕФЕРЕНС КОМПОЗИЦИИ",
+      compRefDesc: "Используйте изображение только для структуры/макета.",
+      strength: "СИЛА",
+      dimensions: "РАЗМЕРЫ",
+      presets: "ПРЕСЕТЫ",
+      custom: "ПОЛЬЗОВАТЕЛЬСКИЕ",
+      width: "ШИРИНА (PX)",
+      height: "ВЫСОТА (PX)",
+      closestRatio: "Ближайшее соотн.",
+      quantity: "КОЛИЧЕСТВО",
+      generate: "Сгенерировать",
+      generating: "Синтез...",
+      clear: "ОЧИСТИТЬ",
+      clickToEnlarge: "НАЖМИТЕ ДЛЯ УВЕЛИЧЕНИЯ",
+      processing: "ОБРАБОТКА_ЗАПРОСА"
+    },
+    img2img: {
+      title: "ИЗОБРАЖЕНИЕ В ИЗОБРАЖЕНИЕ",
+      subtitle: "Изменяйте, редактируйте или повторяйте существующие визуальные эффекты.",
+      sourceImage: "ИСХОДНОЕ ИЗОБРАЖЕНИЕ",
+      modPrompt: "ПРОМПТ МОДИФИКАЦИИ",
+      modPlaceholder: "Опишите, как вы хотите изменить это изображение...",
+      count: "КОЛ-ВО",
+      generate: "Сгенерировать вариации",
+      processing: "Обработка...",
+      outputPreview: "ОБЛАСТЬ ПРЕДПРОСМОТРА"
+    }
+  }
+};

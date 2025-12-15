@@ -1,3 +1,4 @@
+
 export enum AppState {
   IDLE = 'IDLE',
   ANALYZING = 'ANALYZING',
@@ -19,3 +20,5 @@ export interface HistoryItem {
 export interface ErrorState {
   message: string;
 }
+
+export type Language = 'EN' | 'CN' | 'RU';
