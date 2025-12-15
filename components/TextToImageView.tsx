@@ -56,6 +56,40 @@ const RatioIcon = ({ id, active }: { id: string; active: boolean }) => {
     )
 };
 
+const ModelCard = ({ label, description, isSelected, onClick, badge }: { label: string, description: string, isSelected: boolean, onClick: () => void, badge?: string }) => (
+    <button
+        onClick={onClick}
+        className={`relative flex flex-col items-start p-3 rounded-xl border transition-all w-full text-left group ${
+            isSelected 
+            ? 'border-primary-400 bg-primary-50/50 shadow-sm ring-1 ring-primary-100' 
+            : 'border-gray-200 bg-white hover:border-primary-200 hover:shadow-sm'
+        }`}
+    >
+        <div className="flex justify-between w-full items-start mb-1 gap-2">
+            <span className={`text-xs font-bold ${isSelected ? 'text-primary-700' : 'text-gray-700'}`}>
+                {label}
+            </span>
+             <div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 transition-colors ${
+                isSelected ? 'bg-primary-500 border-primary-500' : 'border-gray-200 bg-gray-50 group-hover:border-primary-300'
+            }`}>
+                {isSelected && <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+            </div>
+        </div>
+        
+        <p className={`text-[10px] leading-relaxed pr-1 ${isSelected ? 'text-primary-600/90' : 'text-gray-400'}`}>
+            {description}
+        </p>
+
+        {badge && (
+            <div className="mt-2">
+                 <span className="text-[9px] font-bold px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded border border-amber-200/50 inline-block shadow-sm">
+                    {badge}
+                </span>
+            </div>
+        )}
+    </button>
+);
+
 export const TextToImageView: React.FC<TextToImageViewProps> = ({ onViewImage, initialPrompt, language }) => {
   const t = TRANSLATIONS[language].txt2img;
   
@@ -71,6 +105,7 @@ export const TextToImageView: React.FC<TextToImageViewProps> = ({ onViewImage, i
   // --- Reference State ---
   const [mainImage, setMainImage] = useState<File | null>(null);
   const [mainPreview, setMainPreview] = useState<string | null>(null);
+  const [productConsistencyEnabled, setProductConsistencyEnabled] = useState(true);
   
   const [refImage, setRefImage] = useState<File | null>(null);
   const [refPreview, setRefPreview] = useState<string | null>(null);
@@ -273,7 +308,8 @@ export const TextToImageView: React.FC<TextToImageViewProps> = ({ onViewImage, i
           products,
           chars,
           'FULL_BODY',
-          modelId
+          modelId,
+          productConsistencyEnabled
       );
       
       const newItems: GeneratedImage[] = images.map(url => ({ 
@@ -412,7 +448,21 @@ export const TextToImageView: React.FC<TextToImageViewProps> = ({ onViewImage, i
             {/* Reference Images Grid */}
             <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                    <label className="text-xs font-bold text-gray-800">{t.productRef}</label>
+                    <div className="flex items-center justify-between">
+                         <label className="text-xs font-bold text-gray-800">{t.productRef}</label>
+                         <div className="flex items-center gap-2">
+                             <span className={`text-[10px] font-bold ${productConsistencyEnabled ? 'text-primary-600' : 'text-gray-400'}`}>
+                                 {productConsistencyEnabled ? 'STRICT' : 'LOOSE'}
+                             </span>
+                             <button 
+                                 onClick={() => setProductConsistencyEnabled(!productConsistencyEnabled)}
+                                 className={`w-8 h-4 rounded-full p-0.5 transition-colors duration-300 ${productConsistencyEnabled ? 'bg-primary-500' : 'bg-gray-300'}`}
+                                 title="Toggle Strict Product Consistency"
+                             >
+                                 <div className={`w-3 h-3 bg-white rounded-full shadow-md transform transition-transform duration-300 ${productConsistencyEnabled ? 'translate-x-4' : 'translate-x-0'}`} />
+                             </button>
+                         </div>
+                    </div>
                     <div 
                       className={`
                           relative w-full aspect-[4/5] bg-gray-50 border-2 border-dashed rounded-xl transition-all cursor-pointer group flex flex-col items-center justify-center text-center p-4 overflow-hidden
@@ -498,23 +548,41 @@ export const TextToImageView: React.FC<TextToImageViewProps> = ({ onViewImage, i
 
             {/* Action Bar */}
             <div className="mt-auto space-y-4">
-                <div className="flex rounded-lg overflow-hidden border border-gray-200">
-                     <button 
-                       onClick={() => setSelectedModel('STANDARD')}
-                       className={`flex-1 py-3 text-xs font-bold transition-all ${
-                         selectedModel === 'STANDARD' ? 'text-white bg-primary-400' : 'text-gray-500 bg-gray-100 hover:bg-gray-200'
-                       }`}
-                     >
-                       Nano Banana ({language === 'CN' ? '标准版' : 'Standard'})
-                     </button>
-                     <button 
-                       onClick={() => setSelectedModel('PRO')}
-                       className={`flex-1 py-3 text-xs font-bold transition-all ${
-                         selectedModel === 'PRO' ? 'text-white bg-primary-400' : 'text-gray-500 bg-gray-100 hover:bg-gray-200'
-                       }`}
-                     >
-                       Nano Banana Pro ({language === 'CN' ? '专业版' : 'Pro'})
-                     </button>
+                {/* Model Selector Section */}
+                <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                        <h4 className="text-xs font-bold text-gray-800">{language === 'CN' ? 'AI 模型' : 'AI Model'}</h4>
+                        <span className="text-[10px] text-gray-400 font-mono">Gemini Powered</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                        <ModelCard 
+                            label="Flash 2.5"
+                            description={language === 'CN' ? '极速生成，适合快速实验与迭代。' : 'High speed, ideal for rapid iterations.'}
+                            isSelected={selectedModel === 'STANDARD'}
+                            onClick={() => setSelectedModel('STANDARD')}
+                        />
+                        <ModelCard 
+                            label="Pro 3.0"
+                            description={language === 'CN' ? '超高画质，光影与细节更真实。' : 'High fidelity, superior details & lighting.'}
+                            isSelected={selectedModel === 'PRO'}
+                            onClick={() => setSelectedModel('PRO')}
+                            badge={language === 'CN' ? '需付费 Key' : 'Paid Key Req'}
+                        />
+                    </div>
+                    
+                    {/* Contextual Help for Pro */}
+                    <div className={`overflow-hidden transition-all duration-300 ${selectedModel === 'PRO' ? 'max-h-20 opacity-100 mt-2' : 'max-h-0 opacity-0'}`}>
+                        <div className="p-2.5 bg-yellow-50 rounded-lg border border-yellow-100 flex items-start gap-2.5">
+                            <div className="text-yellow-600 mt-0.5">
+                                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            </div>
+                            <p className="text-[10px] text-yellow-800 leading-relaxed">
+                                {language === 'CN' 
+                                    ? 'Pro 模型调用成本较高，请确保您的 API Key 关联了计费项目 (Google Cloud)。' 
+                                    : 'Pro model incurs higher costs. Ensure your API Key is linked to a billing project in Google Cloud.'}
+                            </p>
+                        </div>
+                    </div>
                 </div>
 
                 {error && <div className="text-xs text-red-500 bg-red-50 p-2 rounded text-center">{error}</div>}

@@ -142,31 +142,33 @@ const analyzeCharacterReference = async (
 
   if (mode === 'FACE_ID') {
     systemPrompt = `
-      You are a Biometric Face Analyst. 
-      Analyze the FACIAL FEATURES of the person in the images for a "Face Swap" operation.
+      ROLE: Forensic Biometric Examiner.
+      TASK: Generate a high-precision "Digital Face Mask" description for a deep-fake style face swap.
       
-      REQUIRED OUTPUT (Strictly Visual):
-      - STRUCTURE: Face shape, bone structure, jawline definition.
-      - EYES: Exact shape, color, eyelid type (e.g., monolid, hooded), distance.
-      - NOSE: Bridge shape, tip definition, width.
-      - MOUTH: Lip shape, fullness, cupid's bow.
-      - SKIN: Tone (hex approx), texture (freckles, age marks), complexion.
-      - DISTINCTIVE FEATURES: Moles, scars, dimples.
+      CRITICAL OUTPUT SECTIONS:
+      1. CRANIOFACIAL STRUCTURE: Exact jawline shape, cheekbone prominence, forehead width, chin topology.
+      2. OCULAR GEOMETRY: Eye shape (almond, round, hooded), canthus angle, eyebrow arch & thickness, inter-pupillary distance impression.
+      3. NASAL & ORAL: Bridge width, tip shape, lip volume, cupid's bow definition.
+      4. DERMATOLOGY: Exact skin tone (hex), texture metrics (smooth/rough), age markers (crows feet, nasolabial folds), unique identifiers (moles, scars).
       
-      INSTRUCTION: Ignore hair, clothing, and background. Focus 100% on the face mask area.
+      INSTRUCTION: Output a rigid, clinical description. Ignore hair and clothing. Focus ONLY on the face mask area.
     `;
   } else if (mode === 'HEAD_ID') {
     systemPrompt = `
-      You are a Digital Hairstylist & Face Analyst.
-      Analyze the HEAD (Face + Hair) of the person.
+      ROLE: Lead Hair & Makeup Artist.
+      TASK: Analyze the complete HEAD unit (Face + Hair) for a digital double.
       
-      REQUIRED OUTPUT:
-      - FACIAL BIOMETRICS: (Summary of eyes, nose, mouth, skin).
-      - HAIR: Exact style, length, color code, texture (curly/straight), parting line, volume.
-      - HEADWEAR: Describe if present.
-      - GROOMING: Facial hair style and texture.
+      CRITICAL OUTPUT SECTIONS:
+      1. FACE MESH: Summary of key identifiers (Eyes, Nose, Jaw, Skin).
+      2. HAIR SIMULATION DATA:
+         - Color (root to tip variations).
+         - Texture (Type 1-4).
+         - Style/Cut mechanics.
+         - Hairline geometry.
+         - Volume and weight.
+      3. GROOMING: Facial hair density, coverage map, and style.
       
-      INSTRUCTION: Ignore the body below the neck. Focus on the head as a complete unit.
+      INSTRUCTION: The goal is to transplant this exact head (face + full hair) onto a new body.
     `;
   } else {
     // FULL_BODY
@@ -194,7 +196,7 @@ const analyzeCharacterReference = async (
         ]
       },
       config: {
-        temperature: 0.2, // Low temperature for high accuracy
+        temperature: 0.1, // Near zero for biological accuracy
       }
     });
     return response.text || "";
@@ -267,7 +269,8 @@ export const generateImagesFromPrompt = async (
   productReferenceImages: File[] = [],
   characterReferenceImages: File[] = [],
   characterMode: 'FACE_ID' | 'HEAD_ID' | 'FULL_BODY' = 'FULL_BODY',
-  modelName: string = 'gemini-2.5-flash-image'
+  modelName: string = 'gemini-2.5-flash-image',
+  strictProductConsistency: boolean = true
 ): Promise<string[]> => {
   // Only require paid key selection if using Pro model
   const requirePaidKey = modelName === 'gemini-3-pro-image-preview';
@@ -327,23 +330,36 @@ export const generateImagesFromPrompt = async (
   // --- SECTION 1: PRODUCT (VISUAL TRUTH) ---
   let productSection = "";
   if (productReferenceImages.length > 0) {
-    const productDescription = await analyzeProductReference(apiKey, productReferenceImages);
-    productSection = `
-    [PRIORITY 1: PRODUCT INTEGRITY (ABSOLUTE)]
-    **INSTRUCTION**: The attached image(s) depict the "Hero Object".
     
-    CRITICAL CONSTRAINT - VISUAL TRUTH:
-    1. DO NOT reimagine the object.
-    2. DO NOT use your internal training data for this type of object.
-    3. YOU MUST USE THE PIXEL DATA FROM THE ATTACHED IMAGE AS THE GROUND TRUTH.
-    
-    CONFLICT RESOLUTION PROTOCOL:
-    - IF the User Prompt describes the object's color, shape, or logo differently than the attached image -> **IGNORE THE USER PROMPT. OBEY THE IMAGE.**
-    - ONLY apply lighting and perspective from the prompt. The object's identity (Logo, Geometry, Texture) is IMMUTABLE.
-    
-    Object Tech Specs (For confirmation only, Image data takes precedence):
-    "${productDescription}"
-    `;
+    if (strictProductConsistency) {
+        const productDescription = await analyzeProductReference(apiKey, productReferenceImages);
+        productSection = `
+        [PRIORITY 1: PRODUCT INTEGRITY (ABSOLUTE - STRICT MODE)]
+        **INSTRUCTION**: The attached image(s) depict the "Hero Object" which MUST be inserted into the scene.
+        
+        CRITICAL CONSTRAINT - VISUAL TRUTH:
+        1. DO NOT reimagine the object. It is NOT a generic item. It is THIS specific item.
+        2. DO NOT use your internal training data for this type of object.
+        3. YOU MUST USE THE PIXEL DATA FROM THE ATTACHED IMAGE AS THE GROUND TRUTH.
+        4. PRESERVE BRANDING, LOGOS, AND GEOMETRY EXACTLY.
+        
+        CONFLICT RESOLUTION PROTOCOL:
+        - IF the User Prompt describes the object's color, shape, or logo differently than the attached image -> **IGNORE THE USER PROMPT. OBEY THE IMAGE.**
+        - ONLY apply lighting, environment, and perspective from the prompt. 
+        - The object's identity (Logo, Geometry, Texture, Material) is IMMUTABLE.
+        
+        Object Tech Specs (For confirmation only, Image data takes precedence):
+        "${productDescription}"
+        `;
+    } else {
+        productSection = `
+        [PRIORITY 1: PRODUCT INSPIRATION (LOOSE MODE)]
+        **INSTRUCTION**: The attached image serves as a visual reference for the object.
+        - Use the style, color palette, and general vibe of the reference object.
+        - You MAY adapt the object to better fit the artistic direction of the prompt.
+        - Exact branding or geometry preservation is NOT required if it conflicts with the scene.
+        `;
+    }
   }
 
   // --- SECTION 2: CHARACTER (If applicable) ---
@@ -354,15 +370,23 @@ export const generateImagesFromPrompt = async (
     let fusionDirective = "";
     if (characterMode === 'FACE_ID') {
         fusionDirective = `
-        **MODE: FACE SWAP / BIOMETRIC TRANSFER**
-        - Graft the facial features from the Reference Image onto the body in the scene.
-        - The FACE must match the Reference Image exactly (Eyes, Nose, Mouth, Structure).
+        **OPERATION: PRECISION FACE SWAP**
+        - TARGET: The character in the generated image.
+        - SOURCE: The "Character Visual DNA" described below.
+        - EXECUTION:
+          1. OVERRIDE any facial descriptions in the USER PROMPT.
+          2. The face MUST match the Reference Image exactly (Eyes, Nose, Mouth, Bone Structure).
+          3. Blend the Reference Face seamlessly onto the body defined by the prompt.
+          4. Match lighting, but preserve facial identity.
         `;
     } else if (characterMode === 'HEAD_ID') {
         fusionDirective = `
-        **MODE: HEAD REPLACEMENT**
-        - Replace the entire head in the scene with the head from the Reference Image.
-        - Preserve Hair, Face, and Headwear from the Reference.
+        **OPERATION: HEAD REPLACEMENT**
+        - TARGET: The character's head.
+        - EXECUTION:
+          1. Replace the entire head (Face + Hair) with the Reference.
+          2. Maintain the hairstyle EXACTLY as described in "Character Visual DNA".
+          3. Ensure the head connects naturally to the body in the scene.
         `;
     } else {
         // FULL_BODY
