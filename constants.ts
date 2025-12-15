@@ -80,16 +80,17 @@ export const TRANSLATIONS: Record<Language, any> = {
       subtitle: "Transform your concepts into visual reality.",
       promptInput: "PROMPT INPUT",
       promptPlaceholder: "Describe the image you want to generate in detail...",
-      refImages: "REFERENCE IMAGES (CONSISTENCY)",
+      productRef: "PRODUCT REFERENCE (CONSISTENCY)",
+      charRef: "CHARACTER REFERENCE (CONSISTENCY)",
+      charMode: "MODE",
+      modeFace: "Face Only (Face Swap)",
+      modeHead: "Head (Face + Hair)",
+      modeFull: "Full Character (Body + Face)",
       optional: "OPTIONAL",
-      addRef: "ADD REF",
-      productIntegrity: "PRODUCT INTEGRITY MODE",
-      productIntegrityDesc: "Strictly preserve the exact object appearance, materials, and details from the reference image.",
-      replaceProduct: "REPLACE PRODUCT MODE",
-      replaceProductDesc: "Substitute the object described in your prompt with the uploaded product, fitting it into the prompt's scene.",
-      compRef: "COMPOSITION REFERENCE",
-      compRefDesc: "Use an image to guide the structure/layout only.",
-      strength: "STRENGTH",
+      addProduct: "ADD PRODUCT",
+      addChar: "ADD CHAR",
+      productIntegrity: "PRODUCT CONSISTENCY",
+      charIntegrity: "CHARACTER CONSISTENCY",
       dimensions: "DIMENSIONS",
       presets: "PRESETS",
       custom: "CUSTOM",
@@ -101,7 +102,10 @@ export const TRANSLATIONS: Record<Language, any> = {
       generating: "Synthesizing...",
       clear: "CLEAR",
       clickToEnlarge: "CLICK TO ENLARGE",
-      processing: "PROCESSING_REQUEST"
+      processing: "PROCESSING_REQUEST",
+      galleryTitle: "GENERATION GALLERY",
+      delete: "Delete",
+      download: "Download"
     },
     img2img: {
       title: "IMAGE TO IMAGE",
@@ -113,6 +117,12 @@ export const TRANSLATIONS: Record<Language, any> = {
       generate: "Generate Variations",
       processing: "Processing...",
       outputPreview: "OUTPUT PREVIEW AREA"
+    },
+    lightbox: {
+      promptTitle: "PROMPT DETAILS",
+      downloadImage: "Download Image",
+      downloadWithMeta: "Download w/ Prompt",
+      close: "Close"
     }
   },
   CN: {
@@ -145,16 +155,17 @@ export const TRANSLATIONS: Record<Language, any> = {
       subtitle: "将您的概念转化为视觉现实。",
       promptInput: "提示词输入",
       promptPlaceholder: "详细描述您想要生成的图像...",
-      refImages: "参考图像 (一致性)",
+      productRef: "产品参考图 (一致性)",
+      charRef: "角色参考图 (一致性)",
+      charMode: "模式",
+      modeFace: "仅换脸 (Face Swap)",
+      modeHead: "换头 (脸+发型)",
+      modeFull: "完整人物 (参考全身)",
       optional: "可选",
-      addRef: "添加参考",
-      productIntegrity: "产品完整模式",
-      productIntegrityDesc: "严格保留参考图像中的物体外观、材质和细节。",
-      replaceProduct: "产品替换模式",
-      replaceProductDesc: "用上传的产品替换提示词中描述的物体，并将其融入场景中。",
-      compRef: "构图参考 (结构)",
-      compRefDesc: "仅参考上传图片的构图、视角和布局。",
-      strength: "参考强度",
+      addProduct: "添加产品",
+      addChar: "添加角色",
+      productIntegrity: "产品一致性模式",
+      charIntegrity: "角色一致性模式",
       dimensions: "尺寸",
       presets: "预设",
       custom: "自定义",
@@ -166,7 +177,10 @@ export const TRANSLATIONS: Record<Language, any> = {
       generating: "合成中...",
       clear: "清除",
       clickToEnlarge: "点击放大",
-      processing: "正在处理请求"
+      processing: "正在处理请求",
+      galleryTitle: "生成记录画廊",
+      delete: "删除",
+      download: "下载"
     },
     img2img: {
       title: "图生图",
@@ -178,6 +192,12 @@ export const TRANSLATIONS: Record<Language, any> = {
       generate: "生成变体",
       processing: "处理中...",
       outputPreview: "输出预览区域"
+    },
+    lightbox: {
+      promptTitle: "提示词详情",
+      downloadImage: "下载原图",
+      downloadWithMeta: "下载 (含提示词)",
+      close: "关闭"
     }
   },
   RU: {
@@ -210,16 +230,17 @@ export const TRANSLATIONS: Record<Language, any> = {
       subtitle: "Превратите ваши концепции в визуальную реальность.",
       promptInput: "ВВОД ПРОМПТА",
       promptPlaceholder: "Подробно опишите изображение, которое вы хотите сгенерировать...",
-      refImages: "РЕФЕРЕНСНЫЕ ИЗОБРАЖЕНИЯ",
+      productRef: "РЕФЕРЕНС ПРОДУКТА",
+      charRef: "РЕФЕРЕНС ПЕРСОНАЖА",
+      charMode: "РЕЖИМ",
+      modeFace: "Только Лицо (Face Swap)",
+      modeHead: "Голова (Лицо + Волосы)",
+      modeFull: "Полный персонаж",
       optional: "ОПЦИОНАЛЬНО",
-      addRef: "ДОБ. РЕФ",
-      productIntegrity: "РЕЖИМ ЦЕЛОСТНОСТИ ПРОДУКТА",
-      productIntegrityDesc: "Строго сохранять внешний вид, материалы и детали объекта с референсного изображения.",
-      replaceProduct: "РЕЖИМ ЗАМЕНЫ ПРОДУКТА",
-      replaceProductDesc: "Заменить объект, описанный в промпте, загруженным продуктом, вписав его в сцену.",
-      compRef: "РЕФЕРЕНС КОМПОЗИЦИИ",
-      compRefDesc: "Используйте изображение только для структуры/макета.",
-      strength: "СИЛА",
+      addProduct: "ДОБ. ПРОДУКТ",
+      addChar: "ДОБ. ПЕРС.",
+      productIntegrity: "ЦЕЛОСТНОСТЬ ПРОДУКТА",
+      charIntegrity: "ЦЕЛОСТНОСТЬ ПЕРСОНАЖА",
       dimensions: "РАЗМЕРЫ",
       presets: "ПРЕСЕТЫ",
       custom: "ПОЛЬЗОВАТЕЛЬСКИЕ",
@@ -231,7 +252,10 @@ export const TRANSLATIONS: Record<Language, any> = {
       generating: "Синтез...",
       clear: "ОЧИСТИТЬ",
       clickToEnlarge: "НАЖМИТЕ ДЛЯ УВЕЛИЧЕНИЯ",
-      processing: "ОБРАБОТКА_ЗАПРОСА"
+      processing: "ОБРАБОТКА_ЗАПРОСА",
+      galleryTitle: "ГАЛЕРЕЯ ГЕНЕРАЦИЙ",
+      delete: "Удалить",
+      download: "Скачать"
     },
     img2img: {
       title: "ИЗОБРАЖЕНИЕ В ИЗОБРАЖЕНИЕ",
@@ -243,6 +267,12 @@ export const TRANSLATIONS: Record<Language, any> = {
       generate: "Сгенерировать вариации",
       processing: "Обработка...",
       outputPreview: "ОБЛАСТЬ ПРЕДПРОСМОТРА"
+    },
+    lightbox: {
+      promptTitle: "ДЕТАЛИ ПРОМПТА",
+      downloadImage: "Скачать",
+      downloadWithMeta: "Скачать с метаданными",
+      close: "Закрыть"
     }
   }
 };

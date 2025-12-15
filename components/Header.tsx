@@ -12,33 +12,39 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ onToggleHistory, onOpenSettings, language, onSetLanguage }) => {
   return (
-    <header className="border-b border-slate-800 bg-slate-950/90 backdrop-blur-md p-6 sticky top-0 z-20 shadow-xl shadow-black/40">
-      <div className="max-w-7xl mx-auto flex items-center justify-between">
+    <header className="bg-white/80 backdrop-blur-lg sticky top-0 z-30 border-b border-gray-100/80">
+      <div className="max-w-[1920px] mx-auto px-6 h-16 flex items-center justify-between">
+        
+        {/* Logo Section */}
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-lg flex items-center justify-center shadow-lg shadow-cyan-500/20 border border-cyan-400/20">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+          {/* Pink Bird Icon Mock */}
+          <div className="text-primary-600">
+            <svg viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
             </svg>
           </div>
           <div>
-            <h1 className="text-xl font-bold tracking-widest text-slate-100">{APP_TITLE}</h1>
-            <p className="text-xs text-slate-500 font-mono tracking-widest uppercase">{APP_SUBTITLE}</p>
+            <h1 className="text-lg font-bold text-gray-800 tracking-tight flex items-center gap-2">
+              <span className="text-primary-600">图像反推工具箱</span>
+              <span className="text-gray-300">|</span>
+              <span className="text-primary-600">EKKO</span>
+            </h1>
           </div>
         </div>
         
-        <div className="flex items-center space-x-4">
+        {/* Right Actions */}
+        <div className="flex items-center space-x-3">
           {/* Language Switcher */}
-          <div className="flex items-center bg-slate-900 rounded-lg p-1 border border-slate-800">
+          <div className="flex items-center bg-gray-100 rounded-full p-1">
             {(['EN', 'CN', 'RU'] as Language[]).map((lang) => (
               <button
                 key={lang}
                 onClick={() => onSetLanguage(lang)}
                 className={`
-                  px-3 py-1 text-xs font-mono rounded transition-all
+                  px-3 py-1 text-[10px] font-bold rounded-full transition-all
                   ${language === lang 
-                    ? 'bg-slate-700 text-cyan-400 font-bold shadow-sm' 
-                    : 'text-slate-500 hover:text-slate-300'}
+                    ? 'bg-white text-gray-900 shadow-sm' 
+                    : 'text-gray-400 hover:text-gray-600'}
                 `}
               >
                 {lang}
@@ -48,7 +54,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleHistory, onOpenSettings,
 
           <button 
             onClick={onToggleHistory}
-            className="flex items-center space-x-2 text-xs font-mono text-slate-400 hover:text-white transition-colors border border-slate-700 hover:border-cyan-500 px-3 py-1.5 rounded-lg"
+            className="flex items-center space-x-2 text-xs font-bold text-gray-600 hover:text-gray-900 bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-full transition-colors"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -58,18 +64,14 @@ export const Header: React.FC<HeaderProps> = ({ onToggleHistory, onOpenSettings,
 
           <button 
             onClick={onOpenSettings}
-            className="p-1.5 text-slate-400 hover:text-cyan-400 transition-colors border border-slate-700 hover:border-cyan-500 rounded-lg"
-            title="Settings"
+            className="flex items-center space-x-2 text-xs font-bold text-gray-800 bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-full transition-colors"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
+             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" /></svg>
+             <span>API Key</span>
           </button>
           
-          <div className="hidden md:flex items-center space-x-2 text-xs font-mono text-cyan-400 border border-cyan-500/30 px-3 py-1 rounded-full bg-cyan-500/10">
-              <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
-              <span>SYSTEM ONLINE</span>
+          <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-400">
+             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
           </div>
         </div>
       </div>

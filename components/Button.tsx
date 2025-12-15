@@ -1,3 +1,4 @@
+
 import React, { ButtonHTMLAttributes } from 'react';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -13,12 +14,15 @@ export const Button: React.FC<ButtonProps> = ({
   disabled,
   ...props 
 }) => {
-  const baseStyles = "relative inline-flex items-center justify-center px-6 py-3 overflow-hidden font-medium transition-all rounded-lg group focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed";
+  const baseStyles = "relative inline-flex items-center justify-center px-6 py-3 font-medium transition-all duration-200 rounded-lg focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed";
   
   const variants = {
-    primary: "bg-cyan-600 hover:bg-cyan-500 text-white shadow-lg shadow-cyan-500/20 border border-transparent",
-    secondary: "bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 hover:border-slate-500",
-    ghost: "bg-transparent hover:bg-slate-800 text-slate-400 hover:text-white",
+    // Pink Gradient/Solid for Primary
+    primary: "bg-gradient-to-r from-[#ff9ba3] to-[#fa6b78] hover:from-[#fa6b78] hover:to-[#e64555] text-white shadow-[0_4px_14px_0_rgba(250,107,120,0.39)] border-none",
+    // Light Gray for Secondary
+    secondary: "bg-gray-100 hover:bg-gray-200 text-gray-700 border border-transparent",
+    // Transparent for Ghost
+    ghost: "bg-transparent hover:bg-gray-100 text-gray-500 hover:text-gray-800",
   };
 
   return (

@@ -1,59 +1,70 @@
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Gemini Reverse Prompt Engineer</title>
+    <title>ZHO | Gemini Engineer</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
         theme: {
           extend: {
             colors: {
-              slate: {
-                850: '#151e2e',
-                900: '#0f172a',
-                950: '#020617',
+              primary: {
+                400: '#ff9ba3',
+                500: '#ff808b',
+                600: '#fa6b78', // Coral Pink
+                700: '#e64555',
               },
-              cyan: {
-                450: '#00bfff', // Custom neon-ish cyan
+              gray: {
+                50: '#f9fafb',
+                100: '#f3f4f6',
+                200: '#e5e7eb',
+                300: '#d1d5db',
+                400: '#9ca3af',
+                500: '#6b7280',
+                800: '#1f2937',
+                900: '#111827',
               }
             },
             fontFamily: {
-              sans: ['Inter', 'sans-serif'],
+              sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
               mono: ['JetBrains Mono', 'monospace'],
+            },
+            boxShadow: {
+              'soft': '0 4px 20px -2px rgba(0, 0, 0, 0.05)',
+              'glow': '0 0 15px rgba(250, 107, 120, 0.3)',
             },
             animation: {
               'scan': 'scan 2s linear infinite',
               'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
             },
-            keyframes: {
-              scan: {
-                '0%': { transform: 'translateY(-100%)' },
-                '100%': { transform: 'translateY(100%)' },
-              }
-            }
           },
         },
       }
     </script>
     <style>
-      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
-      /* Custom scrollbar for a technical feel */
+      body {
+        background-color: #fcfcfc;
+      }
+
+      /* Custom scrollbar for a clean feel */
       ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
+        width: 6px;
+        height: 6px;
       }
       ::-webkit-scrollbar-track {
-        background: #0f172a; 
+        background: transparent; 
       }
       ::-webkit-scrollbar-thumb {
-        background: #334155; 
-        border-radius: 4px;
+        background: #e5e7eb; 
+        border-radius: 10px;
       }
       ::-webkit-scrollbar-thumb:hover {
-        background: #475569; 
+        background: #d1d5db; 
       }
     </style>
   <script type="importmap">
@@ -69,7 +80,7 @@
 }
 </script>
 </head>
-  <body class="bg-slate-950 text-slate-100 font-sans antialiased overflow-y-auto overflow-x-hidden selection:bg-cyan-500/30 selection:text-cyan-200">
+  <body class="bg-[#f9fafc] text-gray-800 font-sans antialiased overflow-y-auto overflow-x-hidden selection:bg-primary-500/20 selection:text-primary-700">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>

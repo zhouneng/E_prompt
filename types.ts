@@ -22,3 +22,11 @@ export interface ErrorState {
 }
 
 export type Language = 'EN' | 'CN' | 'RU';
+
+// Add global window type for AI Studio integration
+declare global {
+  interface AIStudio {
+    hasSelectedApiKey: () => Promise<boolean>;
+    openSelectKey: () => Promise<void>;
+  }
+}
