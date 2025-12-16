@@ -3,13 +3,13 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { UploadZone } from './UploadZone';
 import { Button } from './Button';
 import { generateImagePrompt } from '../services/geminiService';
-import { AppState, ErrorState, HistoryItem, Language } from '../types';
+import { AppState, ErrorState, HistoryItem, Language, LightboxItem } from '../types';
 import { TRANSLATIONS } from '../constants';
 
 interface AnalyzeViewProps {
   onAddToHistory: (item: HistoryItem) => void;
   initialPrompt?: string;
-  onViewImage: (url: string) => void;
+  onViewImage: (items: LightboxItem[], index: number) => void;
   onSendToTxt2Img: (prompt: string) => void;
   language: Language;
 }
@@ -199,7 +199,7 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
                           src={previewUrl!} 
                           alt="Target" 
                           className="max-w-full max-h-[60vh] object-contain cursor-pointer" 
-                          onClick={() => onViewImage(previewUrl!)}
+                          onClick={() => onViewImage([{ url: previewUrl!, id: 'preview', prompt: generatedPrompt }], 0)}
                         />
                      </div>
                      {isDragging && (

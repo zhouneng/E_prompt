@@ -3,7 +3,7 @@ import React from 'react';
 import { Language } from '../types';
 import { TRANSLATIONS } from '../constants';
 
-export type TabType = 'ANALYZE' | 'TXT2IMG' | 'IMG2IMG';
+export type TabType = 'ANALYZE' | 'TXT2IMG' | 'IMG2IMG' | 'PRESETS';
 
 interface TabNavigationProps {
   activeTab: TabType;
@@ -30,16 +30,21 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, onTabCh
       label: t.img2img,
       icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" /></svg>
     },
+    {
+      id: 'PRESETS',
+      label: t.presets,
+      icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+    }
   ];
 
   return (
-    <div className="flex items-center space-x-2 border-b border-gray-200 pb-1 mb-4">
+    <div className="flex items-center space-x-2 border-b border-gray-200 pb-1 mb-4 overflow-x-auto no-scrollbar">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => onTabChange(tab.id)}
             className={`
-              flex items-center space-x-2 px-6 py-2 rounded-t-lg text-sm font-medium transition-all duration-200 border-b-2
+              flex items-center space-x-2 px-6 py-2 rounded-t-lg text-sm font-medium transition-all duration-200 border-b-2 whitespace-nowrap
               ${activeTab === tab.id 
                 ? 'border-primary-500 text-primary-600 bg-red-50/50' 
                 : 'border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-50'}

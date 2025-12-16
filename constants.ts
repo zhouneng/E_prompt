@@ -26,7 +26,7 @@ export const SYSTEM_INSTRUCTION = `
 4. 光影分析 (LIGHTING - EXHAUSTIVE ANALYSIS)
 主光源, 辅助光/填充光, 阴影, 高光, 眼神光, 光线溢出 (Spill), 反射, 轮廓光/逆光, 光线衰减 (Fall-off), 特殊光效, 对比度, 材质交互.
 5. 镜头与技术规格 (CAMERA & TECHNICAL SPECS)
-焦段, 光圈与景深, 机位, 距离, 透视畸变, 动态模糊, 颗粒/噪点, 锐度, 镜头瑕疵, 画幅, 构图, 纵横比.
+焦段, 光影, 机位, 距离, 透视畸变, 动态模糊, 颗粒/噪点, 锐度, 镜头瑕疵, 画幅, 构图, 纵横比.
 6. 色彩与情绪 (COLOR & MOOD - FORENSIC DETAIL)
 色彩层级, 色彩和谐, 色温, 饱和度与对比度, 调色风格, 具体色板, 肤色准确性, 色彩心理与季节性.
 7. 氛围与环境特效 (ATMOSPHERE & ENVIRONMENT EFFECTS)
@@ -49,12 +49,101 @@ export const SYSTEM_INSTRUCTION = `
 [在此处插入中文 Prompt]
 `;
 
+export interface PresetTemplate {
+  id: string;
+  title: Record<Language, string>;
+  description: Record<Language, string>;
+  prompt: string; // The raw prompt to send
+  icon: string; // Emoji or SVG path
+  color: string;
+  type?: 'PORTRAIT' | 'PRODUCT'; // New field to distinguish mode
+}
+
+export const PRESET_TEMPLATES: PresetTemplate[] = [
+  {
+    id: 'christmas_portrait',
+    title: {
+      EN: "Christmas Portrait",
+      CN: "圣诞写真",
+      RU: "Рождественский портрет"
+    },
+    description: {
+      EN: "Professional studio photography with winter vibes, red knitwear, and snow effects.",
+      CN: "专业影棚摄影，冬季圣诞主题，红色针织帽与雪花氛围。",
+      RU: "Профессиональная студийная съемка с зимней атмосферой."
+    },
+    prompt: `Professional studio portrait, Christmas winter theme, pure white seamless background. Real skin texture (visible pores and natural sheen). Natural makeup: pale pink blush, natural lip color. 
+    Studio setting: Pure white seamless background, professional soft lighting, gentle snowflakes falling on hair, knitted hat and scarf, winter atmosphere. 
+    Clothing: Bright red cable knit hat, Bright red chunky wool scarf, Black wool coat.
+    Technical specs: 85mm lens, f/1.8-2.8 wide aperture, shallow depth of field, natural soft studio lighting, photorealistic high-end fashion portrait quality, ultra-high detail, photography level resolution.
+    Atmosphere: Natural, warm, gentle expression, quiet and contemplative gaze, looking directly at camera.`,
+    icon: "🎄",
+    color: "from-red-400 to-green-500",
+    type: 'PORTRAIT'
+  },
+  {
+    id: 'winter_sprite_collage',
+    title: {
+      EN: "Winter Sprite Collage",
+      CN: "雪景中的精灵",
+      RU: "Зимний эльф коллаж"
+    },
+    description: {
+      EN: "Editorial winter poster style multi-panel collage with candid iPhone aesthetic.",
+      CN: "杂志风格多图拼贴。iPhone 随拍美学，毛皮大衣、雪地靴与音乐播放器覆盖。",
+      RU: "Многопанельный зимний постер в стиле iPhone фотографии."
+    },
+    prompt: `Editorial winter poster style multi-panel collage with spontaneous iPhone photography aesthetic (candid, warm, realistic). Soft snowflakes with delicate analog grain and slight handheld imperfections.
+
+    Reference Adherence: Strictly follow the provided photo for facial reference with zero deviation. Preserve facial proportions, skin texture, expression, and identity features with 100% accuracy. Do not stylize or alter facial features.
+
+    Consistent Elements:
+    - Subject Wardrobe: Short faux fur coat, black leggings, classic UGG boots (minimalist, cozy, very wintry style)
+    - Primary Device: iPhone 17 Pro Max in silver, held by the subject in relevant frames
+    - Color Palette: Warm amber, soft red, pine green, soft winter gray
+
+    Layout Configuration:
+    Panel 1 (Top Left): Store window reflection photo at dusk. Faint Christmas lights, garlands, frosted glass edges, warm highlights on fur. Subject holding phone partially covering face. Grazing silhouettes, layered reflections, soft ghosting, natural glass curvature distortion.
+
+    Panel 2 (Top Right): Ultra-wide street scene portrait (snowy sidewalk/Christmas market). Close-up, tilted downward camera angle. Subject casually leaning forward, hands in coat pockets. Black leggings and UGG boots clearly visible. Falling snow with slight motion blur. Subtle perspective distortion to enhance handheld authenticity.
+
+    Panel 3 (Bottom Right): Intimate overhead selfie with warm street or cafe lighting. Holding a takeaway festive drink (coffee or mulled wine). Visible wired earphones. Clear detailed fur texture and winter fabrics. Soft grain enhancing nostalgic holiday atmosphere.
+
+    Graphic Overlay: Minimalist Apple Music style mini player floating in the center of the collage, showing a popular Christmas song (e.g., 'Last Christmas' or 'All I Want for Christmas Is You'). Flat clean render without shadows.`,
+    icon: "❄️",
+    color: "from-blue-300 to-indigo-400",
+    type: 'PORTRAIT'
+  },
+  {
+    id: 'tech_exploded_view',
+    title: {
+      EN: "Tech Exploded View",
+      CN: "超逼真爆炸视图",
+      RU: "Технический разрез"
+    },
+    description: {
+      EN: "Ultra-detailed technical breakdown of products preserving logos and details.",
+      CN: "超细节的产品技术拆解视图，完美保留Logo与材质细节。",
+      RU: "Ультра-детальный технический разбор продуктов."
+    },
+    prompt: `Generate an ultra-detailed, hyperrealistic exploded technical view of the subject provided in the reference image. 
+    Break down the product into its internal components suspended in mid-air, showing complex mechanical and electronic structure. 
+    Precise engineering layout, clean studio lighting, 8k resolution, cinematic rendering. 
+    Ensure strict adherence to the original product's text, logos, materials, and form factor. 
+    Keep the core identity of the product unchanged while revealing its inner workings.`,
+    icon: "⚙️",
+    color: "from-slate-600 to-slate-800",
+    type: 'PRODUCT'
+  }
+];
+
 export const TRANSLATIONS: Record<Language, any> = {
   EN: {
     nav: {
       reverse: "Reverse Engineer",
       txt2img: "Text to Image",
-      img2img: "Image to Image"
+      img2img: "Image to Image",
+      presets: "AI Portrait"
     },
     analyze: {
       title: "Decode The Visual Matrix",
@@ -98,6 +187,7 @@ export const TRANSLATIONS: Record<Language, any> = {
       height: "HEIGHT (PX)",
       closestRatio: "Closest Ratio",
       quantity: "QUANTITY",
+      resolution: "QUALITY",
       generate: "Generate Images",
       generating: "Synthesizing...",
       clear: "CLEAR",
@@ -118,6 +208,16 @@ export const TRANSLATIONS: Record<Language, any> = {
       processing: "Processing...",
       outputPreview: "OUTPUT PREVIEW AREA"
     },
+    presets: {
+      title: "AI PRESET STUDIO",
+      subtitle: "Select a style, upload a reference, and get professional results instantly.",
+      selectStyle: "SELECT STYLE",
+      uploadFace: "UPLOAD SELFIE",
+      uploadProduct: "UPLOAD PRODUCT",
+      generate: "Generate",
+      processing: "Developing...",
+      result: "RESULT"
+    },
     lightbox: {
       promptTitle: "PROMPT DETAILS",
       downloadImage: "Download Image",
@@ -129,7 +229,8 @@ export const TRANSLATIONS: Record<Language, any> = {
     nav: {
       reverse: "图像反推",
       txt2img: "文生图",
-      img2img: "图生图"
+      img2img: "图生图",
+      presets: "AI 写真"
     },
     analyze: {
       title: "解码视觉矩阵",
@@ -173,6 +274,7 @@ export const TRANSLATIONS: Record<Language, any> = {
       height: "高度 (PX)",
       closestRatio: "最接近比例",
       quantity: "数量",
+      resolution: "画质分辨率",
       generate: "生成图像",
       generating: "合成中...",
       clear: "清除",
@@ -193,6 +295,16 @@ export const TRANSLATIONS: Record<Language, any> = {
       processing: "处理中...",
       outputPreview: "输出预览区域"
     },
+    presets: {
+      title: "AI 预设工作室",
+      subtitle: "选择一个风格，上传参考图，一键生成专业大片。",
+      selectStyle: "选择风格模板",
+      uploadFace: "上传面部照片 (自拍)",
+      uploadProduct: "上传产品照片",
+      generate: "生成大片",
+      processing: "冲印中...",
+      result: "生成结果"
+    },
     lightbox: {
       promptTitle: "提示词详情",
       downloadImage: "下载原图",
@@ -204,11 +316,12 @@ export const TRANSLATIONS: Record<Language, any> = {
     nav: {
       reverse: "Обратный инжиниринг",
       txt2img: "Текст в изображение",
-      img2img: "Изображение в изображение"
+      img2img: "Изображение в изображение",
+      presets: "AI Портрет"
     },
     analyze: {
       title: "Декодировать визуальную матрицу",
-      subtitle: "Загрузите любое изображение для обратного проектирования его ДНК. Мы анализируем освещение, композицию и текстуру.",
+      subtitle: "Загрузите любое изображение для обратного проектирования его ДНК.",
       uploadTitle: "Перетащите изображение сюда",
       uploadSubtitle: "Поддержка JPG, PNG, WEBP (Макс 20MB)",
       dropToReplace: "ПЕРЕТАЩИТЕ ДЛЯ ЗАМЕНЫ",
@@ -229,12 +342,12 @@ export const TRANSLATIONS: Record<Language, any> = {
       title: "ТЕКСТ В ИЗОБРАЖЕНИЕ",
       subtitle: "Превратите ваши концепции в визуальную реальность.",
       promptInput: "ВВОД ПРОМПТА",
-      promptPlaceholder: "Подробно опишите изображение, которое вы хотите сгенерировать...",
+      promptPlaceholder: "Подробно опишите изображение...",
       productRef: "РЕФЕРЕНС ПРОДУКТА",
       charRef: "РЕФЕРЕНС ПЕРСОНАЖА",
       charMode: "РЕЖИМ",
-      modeFace: "Только Лицо (Face Swap)",
-      modeHead: "Голова (Лицо + Волосы)",
+      modeFace: "Только Лицо",
+      modeHead: "Голова",
       modeFull: "Полный персонаж",
       optional: "ОПЦИОНАЛЬНО",
       addProduct: "ДОБ. ПРОДУКТ",
@@ -248,6 +361,7 @@ export const TRANSLATIONS: Record<Language, any> = {
       height: "ВЫСОТА (PX)",
       closestRatio: "Ближайшее соотн.",
       quantity: "КОЛИЧЕСТВО",
+      resolution: "КАЧЕСТВО",
       generate: "Сгенерировать",
       generating: "Синтез...",
       clear: "ОЧИСТИТЬ",
@@ -264,9 +378,19 @@ export const TRANSLATIONS: Record<Language, any> = {
       modPrompt: "ПРОМПТ МОДИФИКАЦИИ",
       modPlaceholder: "Опишите, как вы хотите изменить это изображение...",
       count: "КОЛ-ВО",
-      generate: "Сгенерировать вариации",
+      generate: "Сгенерировать",
       processing: "Обработка...",
       outputPreview: "ОБЛАСТЬ ПРЕДПРОСМОТРА"
+    },
+    presets: {
+      title: "AI СТУДИЯ",
+      subtitle: "Выберите стиль, загрузите фото и получите профессиональный результат.",
+      selectStyle: "ВЫБЕРИТЕ СТИЛЬ",
+      uploadFace: "ЗАГРУЗИТЬ ЛИЦО",
+      uploadProduct: "ЗАГРУЗИТЬ ПРОДУКТ",
+      generate: "Создать",
+      processing: "Обработка...",
+      result: "РЕЗУЛЬТАТ"
     },
     lightbox: {
       promptTitle: "ДЕТАЛИ ПРОМПТА",

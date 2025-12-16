@@ -3,16 +3,11 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { UploadZone } from './UploadZone';
 import { Button } from './Button';
 import { generateImageModification } from '../services/geminiService';
-import { Language } from '../types';
+import { Language, LightboxItem } from '../types';
 import { TRANSLATIONS } from '../constants';
 
-interface GeneratedImage {
-  url: string;
-  prompt: string;
-}
-
 interface ImageToImageViewProps {
-  onViewImage: (index: number, items: GeneratedImage[]) => void;
+  onViewImage: (items: LightboxItem[], index: number) => void;
   language: Language;
 }
 
@@ -23,7 +18,7 @@ export const ImageToImageView: React.FC<ImageToImageViewProps> = ({ onViewImage,
   const [prompt, setPrompt] = useState("");
   const [imageCount, setImageCount] = useState<number>(1);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
+  const [generatedImages, setGeneratedImages] = useState<LightboxItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -48,7 +43,14 @@ export const ImageToImageView: React.FC<ImageToImageViewProps> = ({ onViewImage,
 
     try {
       const images = await generateImageModification(selectedFile, prompt, imageCount);
-      const newImages = images.map(url => ({ url, prompt }));
+      const newImages = images.map(url => ({ 
+        id: crypto.randomUUID(), 
+        url, 
+        prompt,
+        title: "Modified Image",
+        tags: ["Image-to-Image", "Gemini Flash"],
+        timestamp: Date.now()
+      }));
       setGeneratedImages(prev => [...newImages, ...prev]);
     } catch (e: any) {
       setError(e.message || "Failed to process image modification.");
@@ -99,7 +101,7 @@ export const ImageToImageView: React.FC<ImageToImageViewProps> = ({ onViewImage,
 
   // Pass all generated images to lightbox so user can swipe between them
   const handleOpenLightbox = (index: number) => {
-     onViewImage(index, generatedImages);
+     onViewImage(generatedImages, index);
   };
 
   return (

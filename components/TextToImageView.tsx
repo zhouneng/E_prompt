@@ -1,94 +1,15 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from './Button';
 import { generateImagesFromPrompt } from '../services/geminiService';
-import { Language } from '../types';
+import { Language, LightboxItem } from '../types';
 import { TRANSLATIONS } from '../constants';
-
-interface GeneratedImage {
-  id: string; 
-  url: string;
-  prompt: string;
-  timestamp: number;
-}
+import { ModelCard, RatioIcon } from './GenerationCommon';
 
 interface TextToImageViewProps {
-  onViewImage: (index: number, items: { url: string; prompt: string }[]) => void;
+  onViewImage: (items: LightboxItem[], index: number) => void;
   initialPrompt?: string;
   language: Language;
 }
-
-const RatioIcon = ({ id, active }: { id: string; active: boolean }) => {
-    let width = 14;
-    let height = 14;
-    const stroke = active ? "white" : "#9ca3af"; // white or gray-400
-    
-    if (id === 'smart') {
-        return (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth="2">
-                <path d="M3 7V5a2 2 0 0 1 2-2h2" />
-                <path d="M17 3h2a2 2 0 0 1 2 2v2" />
-                <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
-                <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
-                <rect x="7" y="7" width="10" height="10" rx="1" strokeOpacity="0.5" />
-            </svg>
-        );
-    }
-
-    switch(id) {
-        case '21:9': width = 20; height = 9; break;
-        case '16:9': width = 18; height = 10; break;
-        case '3:2':  width = 18; height = 12; break;
-        case '4:3':  width = 16; height = 12; break;
-        case '1:1':  width = 14; height = 14; break;
-        case '3:4':  width = 12; height = 16; break;
-        case '2:3':  width = 12; height = 18; break;
-        case '9:16': width = 10; height = 18; break;
-    }
-
-    const x = (24 - width) / 2;
-    const y = (24 - height) / 2;
-
-    return (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth="2">
-            <rect x={x} y={y} width={width} height={height} rx="2" />
-        </svg>
-    )
-};
-
-const ModelCard = ({ label, description, isSelected, onClick, badge }: { label: string, description: string, isSelected: boolean, onClick: () => void, badge?: string }) => (
-    <button
-        onClick={onClick}
-        className={`relative flex flex-col items-start p-3 rounded-xl border transition-all w-full text-left group ${
-            isSelected 
-            ? 'border-primary-400 bg-primary-50/50 shadow-sm ring-1 ring-primary-100' 
-            : 'border-gray-200 bg-white hover:border-primary-200 hover:shadow-sm'
-        }`}
-    >
-        <div className="flex justify-between w-full items-start mb-1 gap-2">
-            <span className={`text-xs font-bold ${isSelected ? 'text-primary-700' : 'text-gray-700'}`}>
-                {label}
-            </span>
-             <div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 transition-colors ${
-                isSelected ? 'bg-primary-500 border-primary-500' : 'border-gray-200 bg-gray-50 group-hover:border-primary-300'
-            }`}>
-                {isSelected && <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
-            </div>
-        </div>
-        
-        <p className={`text-[10px] leading-relaxed pr-1 ${isSelected ? 'text-primary-600/90' : 'text-gray-400'}`}>
-            {description}
-        </p>
-
-        {badge && (
-            <div className="mt-2">
-                 <span className="text-[9px] font-bold px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded border border-amber-200/50 inline-block shadow-sm">
-                    {badge}
-                </span>
-            </div>
-        )}
-    </button>
-);
 
 export const TextToImageView: React.FC<TextToImageViewProps> = ({ onViewImage, initialPrompt, language }) => {
   const t = TRANSLATIONS[language].txt2img;
@@ -100,7 +21,13 @@ export const TextToImageView: React.FC<TextToImageViewProps> = ({ onViewImage, i
   const [activeRatioId, setActiveRatioId] = useState<string>("1:1");
   const [customWidth, setCustomWidth] = useState<number>(2048);
   const [customHeight, setCustomHeight] = useState<number>(2048);
-  const [selectedModel, setSelectedModel] = useState<'STANDARD' | 'PRO'>('STANDARD');
+  
+  // Model State
+  // STANDARD = Flash 2.5
+  // PRO = Official Pro 3.0
+  // NANO = Proxy Nano-Banana-2
+  const [selectedModel, setSelectedModel] = useState<'STANDARD' | 'PRO' | 'NANO'>('NANO');
+  const [selectedResolution, setSelectedResolution] = useState<'1K' | '2K' | '4K'>('1K');
   
   // --- Reference State ---
   const [mainImage, setMainImage] = useState<File | null>(null);
@@ -122,7 +49,7 @@ export const TextToImageView: React.FC<TextToImageViewProps> = ({ onViewImage, i
   const [error, setError] = useState<string | null>(null);
 
   // --- Gallery State ---
-  const [gallery, setGallery] = useState<GeneratedImage[]>(() => {
+  const [gallery, setGallery] = useState<LightboxItem[]>(() => {
     try {
       const saved = localStorage.getItem('txt2img_gallery');
       return saved ? JSON.parse(saved) : [];
@@ -133,21 +60,15 @@ export const TextToImageView: React.FC<TextToImageViewProps> = ({ onViewImage, i
 
   // ROBUST LOCALSTORAGE HANDLING
   useEffect(() => {
-    // Debounce saving slightly to avoid rapid writes during state updates
     const timer = setTimeout(() => {
         try {
             localStorage.setItem('txt2img_gallery', JSON.stringify(gallery));
         } catch (e) {
-            console.warn("LocalStorage quota exceeded. Attempting to save only the latest item...");
+            console.warn("LocalStorage quota exceeded.");
             try {
-                // Extreme fallback: Save only the most recent image
                 const latest = gallery.slice(0, 1);
                 localStorage.setItem('txt2img_gallery', JSON.stringify(latest));
-            } catch (e2) {
-                console.error("Critical: Storage full. Session mode only.", e2);
-                // We stop trying to save to prevent crashing. 
-                // The images will remain in memory (state) until refresh.
-            }
+            } catch (e2) {}
         }
     }, 500);
     return () => clearTimeout(timer);
@@ -176,14 +97,13 @@ export const TextToImageView: React.FC<TextToImageViewProps> = ({ onViewImage, i
     };
   }, [mainPreview, refPreview]);
 
-  // Handle Smart Ratio Logic - Read image dimensions if available
+  // Handle Smart Ratio Logic
   useEffect(() => {
     if (activeRatioId === 'smart' && mainPreview) {
         const img = new Image();
         img.onload = () => {
             setCustomWidth(img.width);
             setCustomHeight(img.height);
-            // approximate ratio setting for API
             const r = img.width / img.height;
             if (r >= 1.7) setAspectRatio("16:9");
             else if (r >= 1.3) setAspectRatio("4:3");
@@ -195,7 +115,6 @@ export const TextToImageView: React.FC<TextToImageViewProps> = ({ onViewImage, i
     }
   }, [activeRatioId, mainPreview]);
 
-  // Unified File Handler
   const processFile = (file: File, type: 'MAIN' | 'REF') => {
       if (!file.type.startsWith('image/')) return;
       
@@ -212,11 +131,10 @@ export const TextToImageView: React.FC<TextToImageViewProps> = ({ onViewImage, i
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'MAIN' | 'REF') => {
     if (e.target.files && e.target.files.length > 0) {
         processFile(e.target.files[0], type);
-        e.target.value = ''; // Reset input
+        e.target.value = ''; 
     }
   };
 
-  // --- Drag & Drop Logic ---
   const handleDragEnter = (type: 'MAIN' | 'REF') => (e: React.DragEvent) => {
       e.preventDefault();
       e.stopPropagation();
@@ -268,7 +186,6 @@ export const TextToImageView: React.FC<TextToImageViewProps> = ({ onViewImage, i
       else setCustomHeight(num);
       setActiveRatioId('custom');
       
-      // Calculate closest ratio for API
       const w = type === 'W' ? num : customWidth;
       const h = type === 'H' ? num : customHeight;
       if (w > 0 && h > 0) {
@@ -298,7 +215,11 @@ export const TextToImageView: React.FC<TextToImageViewProps> = ({ onViewImage, i
 
     const products = mainImage ? [mainImage] : [];
     const chars = refImage ? [refImage] : [];
-    const modelId = selectedModel === 'PRO' ? 'gemini-3-pro-image-preview' : 'gemini-2.5-flash-image';
+    
+    // MAP selection to model ID
+    let modelId = 'gemini-2.5-flash-image';
+    if (selectedModel === 'PRO') modelId = 'gemini-3-pro-image-preview';
+    if (selectedModel === 'NANO') modelId = 'nano-banana-2'; // Proxy model ID
 
     try {
       const images = await generateImagesFromPrompt(
@@ -309,18 +230,21 @@ export const TextToImageView: React.FC<TextToImageViewProps> = ({ onViewImage, i
           chars,
           'FULL_BODY',
           modelId,
-          productConsistencyEnabled
+          productConsistencyEnabled,
+          selectedResolution // Pass resolution (works for PRO and NANO)
       );
       
-      const newItems: GeneratedImage[] = images.map(url => ({ 
+      const newItems: LightboxItem[] = images.map(url => ({ 
         id: crypto.randomUUID(),
         url, 
         prompt: prompt,
+        title: "Generated Image",
+        model: selectedModel,
+        ratio: aspectRatio,
+        tags: ['Text-to-Image', selectedModel, selectedResolution],
         timestamp: Date.now()
       }));
 
-      // Update state
-      // Use a more conservative limit of 12 items for memory safety
       setGallery(prev => [...newItems, ...prev].slice(0, 12));
 
     } catch (e: any) {
@@ -337,16 +261,14 @@ export const TextToImageView: React.FC<TextToImageViewProps> = ({ onViewImage, i
     }
   };
 
-  // Helper to open lightbox with correct index
   const handleOpenLightbox = (index: number) => {
-    onViewImage(index, gallery);
+    onViewImage(gallery, index);
   };
 
   const activeImage = gallery.length > 0 ? gallery[0] : null;
 
   return (
     <div className="flex flex-col gap-8">
-      {/* Top Section: Form + Main Preview */}
       <div className="flex flex-col lg:flex-row gap-6 h-full min-h-[800px]">
         
         {/* --- LEFT COLUMN: FORM --- */}
@@ -358,9 +280,6 @@ export const TextToImageView: React.FC<TextToImageViewProps> = ({ onViewImage, i
                     <span className="text-xl">✍️</span>
                     <h3>{t.title}</h3>
                 </div>
-                <p className="text-xs text-gray-500">
-                    {language === 'CN' ? '从头生成一张图片，或描述你能想象到的任何变化。' : 'Generate an image from scratch or describe any changes you can imagine.'}
-                </p>
                 <div className="relative">
                     <textarea 
                       value={prompt} 
@@ -371,9 +290,76 @@ export const TextToImageView: React.FC<TextToImageViewProps> = ({ onViewImage, i
                 </div>
             </div>
 
+            {/* Model Selector Section */}
+            <div>
+                <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-xs font-bold text-gray-800">{language === 'CN' ? 'AI 模型引擎' : 'AI Model Engine'}</h4>
+                </div>
+                
+                <div className="space-y-3">
+                    <div className="grid grid-cols-3 gap-2">
+                        {/* Standard Flash */}
+                        <ModelCard 
+                            label="Flash 2.5"
+                            description={language === 'CN' ? '原生极速' : 'Native Fast'}
+                            isSelected={selectedModel === 'STANDARD'}
+                            onClick={() => setSelectedModel('STANDARD')}
+                        />
+                        {/* Official Pro */}
+                        <ModelCard 
+                            label="Pro 3.0"
+                            description={language === 'CN' ? '原生高画质' : 'Official HQ'}
+                            isSelected={selectedModel === 'PRO'}
+                            onClick={() => setSelectedModel('PRO')}
+                            color="purple"
+                        />
+                        {/* Proxy Nano */}
+                        <ModelCard 
+                            label="Nano v2"
+                            description={language === 'CN' ? '第三方代理' : 'Proxy Opt'}
+                            isSelected={selectedModel === 'NANO'}
+                            onClick={() => setSelectedModel('NANO')}
+                            badge="PROXY"
+                            color="blue"
+                        />
+                    </div>
+
+                    {/* Pro/Nano Resolution Selector */}
+                    {(selectedModel === 'PRO' || selectedModel === 'NANO') && (
+                       <div className={`
+                          border rounded-xl p-3 animate-in fade-in slide-in-from-top-2 duration-300
+                          ${selectedModel === 'PRO' ? 'bg-purple-50 border-purple-100' : 'bg-blue-50 border-blue-100'}
+                       `}>
+                           <div className="flex items-center justify-between mb-2">
+                               <label className={`text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 ${selectedModel === 'PRO' ? 'text-purple-700' : 'text-blue-700'}`}>
+                                   {t.resolution || 'QUALITY'}
+                                   <span>✨</span>
+                               </label>
+                           </div>
+                           <div className="grid grid-cols-3 gap-2">
+                               {(['1K', '2K', '4K'] as const).map(res => (
+                                   <button
+                                       key={res}
+                                       onClick={() => setSelectedResolution(res)}
+                                       className={`
+                                           py-1.5 rounded-lg text-xs font-bold transition-all border
+                                           ${selectedResolution === res 
+                                               ? (selectedModel === 'PRO' ? 'bg-purple-500 border-purple-600 text-white' : 'bg-blue-500 border-blue-600 text-white')
+                                               : 'bg-white text-gray-600 border-gray-200'}
+                                       `}
+                                   >
+                                       {res}
+                                   </button>
+                               ))}
+                           </div>
+                       </div>
+                    )}
+                </div>
+            </div>
+
             {/* Aspect Ratio Section */}
             <div>
-                <h4 className="text-xs font-bold text-gray-800 mb-2">{language === 'CN' ? '选择比例' : 'Select Ratio'}</h4>
+                <h4 className="text-xs font-bold text-gray-800 mb-2">{language === 'CN' ? '画幅比例' : 'Aspect Ratio'}</h4>
                 <div className="bg-[#1a1c22] rounded-xl p-4 space-y-4 shadow-inner">
                     <div className="grid grid-cols-5 sm:grid-cols-9 gap-1">
                         {ratios.map((r) => {
@@ -386,6 +372,7 @@ export const TextToImageView: React.FC<TextToImageViewProps> = ({ onViewImage, i
                                       flex flex-col items-center justify-center py-2 px-0.5 rounded-lg transition-all duration-200
                                       ${isActive ? 'bg-[#2c2f38] shadow-md' : 'hover:bg-[#2c2f38]/50'}
                                   `}
+                                  title={r.label}
                               >
                                   <div className="mb-1">
                                       <RatioIcon id={r.id} active={isActive} />
@@ -397,30 +384,37 @@ export const TextToImageView: React.FC<TextToImageViewProps> = ({ onViewImage, i
                             );
                         })}
                     </div>
-
-                    <div className="flex items-center gap-2">
-                         <div className="flex-1 bg-[#23262d] rounded-lg flex items-center px-3 py-2 border border-[#2c2f38]">
-                             <span className="text-gray-500 text-xs font-mono mr-2">W</span>
-                             <input 
-                                type="number" 
-                                value={customWidth}
-                                onChange={(e) => handleCustomInput('W', e.target.value)}
-                                className="w-full bg-transparent text-white text-sm font-mono focus:outline-none text-right"
-                             />
-                         </div>
-                         <div className="text-gray-600">x</div>
-                         <div className="flex-1 bg-[#23262d] rounded-lg flex items-center px-3 py-2 border border-[#2c2f38]">
-                             <span className="text-gray-500 text-xs font-mono mr-2">H</span>
-                             <input 
-                                type="number" 
-                                value={customHeight}
-                                onChange={(e) => handleCustomInput('H', e.target.value)}
-                                className="w-full bg-transparent text-white text-sm font-mono focus:outline-none text-right"
-                             />
-                         </div>
-                         <span className="text-gray-500 text-xs font-bold ml-1">PX</span>
+                    
+                    {/* Custom Input Section */}
+                    <div className="pt-2 border-t border-gray-700/50">
+                        <div className="flex items-center gap-2 mb-2">
+                             <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">{t.custom || "CUSTOM"}</span>
+                             {activeRatioId === 'custom' && <span className="text-[9px] bg-primary-900/30 text-primary-400 px-1.5 rounded border border-primary-800/50">ACTIVE: {aspectRatio}</span>}
+                        </div>
+                        <div className="flex items-center gap-3">
+                           <div className="relative flex-1">
+                               <input 
+                                  type="number" 
+                                  value={customWidth}
+                                  onChange={(e) => handleCustomInput('W', e.target.value)}
+                                  className={`w-full bg-[#2c2f38] border ${activeRatioId === 'custom' ? 'border-primary-500/50 text-white' : 'border-transparent text-gray-400'} rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:border-primary-500 transition-colors`}
+                                  placeholder="Width"
+                               />
+                               <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-gray-600 font-bold">W</span>
+                           </div>
+                           <span className="text-gray-600 font-mono text-xs">x</span>
+                           <div className="relative flex-1">
+                               <input 
+                                  type="number" 
+                                  value={customHeight}
+                                  onChange={(e) => handleCustomInput('H', e.target.value)}
+                                  className={`w-full bg-[#2c2f38] border ${activeRatioId === 'custom' ? 'border-primary-500/50 text-white' : 'border-transparent text-gray-400'} rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:border-primary-500 transition-colors`}
+                                  placeholder="Height"
+                               />
+                               <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-gray-600 font-bold">H</span>
+                           </div>
+                        </div>
                     </div>
-
                 </div>
             </div>
 
@@ -451,13 +445,9 @@ export const TextToImageView: React.FC<TextToImageViewProps> = ({ onViewImage, i
                     <div className="flex items-center justify-between">
                          <label className="text-xs font-bold text-gray-800">{t.productRef}</label>
                          <div className="flex items-center gap-2">
-                             <span className={`text-[10px] font-bold ${productConsistencyEnabled ? 'text-primary-600' : 'text-gray-400'}`}>
-                                 {productConsistencyEnabled ? 'STRICT' : 'LOOSE'}
-                             </span>
                              <button 
                                  onClick={() => setProductConsistencyEnabled(!productConsistencyEnabled)}
                                  className={`w-8 h-4 rounded-full p-0.5 transition-colors duration-300 ${productConsistencyEnabled ? 'bg-primary-500' : 'bg-gray-300'}`}
-                                 title="Toggle Strict Product Consistency"
                              >
                                  <div className={`w-3 h-3 bg-white rounded-full shadow-md transform transition-transform duration-300 ${productConsistencyEnabled ? 'translate-x-4' : 'translate-x-0'}`} />
                              </button>
@@ -497,7 +487,7 @@ export const TextToImageView: React.FC<TextToImageViewProps> = ({ onViewImage, i
                               onClick={(e) => {e.stopPropagation(); setMainImage(null); setMainPreview(null);}} 
                               className="absolute top-2 right-2 bg-white rounded-full p-1 shadow-md hover:bg-red-50 text-red-400 z-20"
                            >
-                              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
+                              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
                            </button>
                         )}
                     </div>
@@ -539,7 +529,7 @@ export const TextToImageView: React.FC<TextToImageViewProps> = ({ onViewImage, i
                               onClick={(e) => {e.stopPropagation(); setRefImage(null); setRefPreview(null);}} 
                               className="absolute top-2 right-2 bg-white rounded-full p-1 shadow-md hover:bg-red-50 text-red-400 z-20"
                            >
-                              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
+                              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
                            </button>
                         )}
                     </div>
@@ -548,43 +538,6 @@ export const TextToImageView: React.FC<TextToImageViewProps> = ({ onViewImage, i
 
             {/* Action Bar */}
             <div className="mt-auto space-y-4">
-                {/* Model Selector Section */}
-                <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                        <h4 className="text-xs font-bold text-gray-800">{language === 'CN' ? 'AI 模型' : 'AI Model'}</h4>
-                        <span className="text-[10px] text-gray-400 font-mono">Gemini Powered</span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                        <ModelCard 
-                            label="Flash 2.5"
-                            description={language === 'CN' ? '极速生成，适合快速实验与迭代。' : 'High speed, ideal for rapid iterations.'}
-                            isSelected={selectedModel === 'STANDARD'}
-                            onClick={() => setSelectedModel('STANDARD')}
-                        />
-                        <ModelCard 
-                            label="Pro 3.0"
-                            description={language === 'CN' ? '超高画质，光影与细节更真实。' : 'High fidelity, superior details & lighting.'}
-                            isSelected={selectedModel === 'PRO'}
-                            onClick={() => setSelectedModel('PRO')}
-                            badge={language === 'CN' ? '需付费 Key' : 'Paid Key Req'}
-                        />
-                    </div>
-                    
-                    {/* Contextual Help for Pro */}
-                    <div className={`overflow-hidden transition-all duration-300 ${selectedModel === 'PRO' ? 'max-h-20 opacity-100 mt-2' : 'max-h-0 opacity-0'}`}>
-                        <div className="p-2.5 bg-yellow-50 rounded-lg border border-yellow-100 flex items-start gap-2.5">
-                            <div className="text-yellow-600 mt-0.5">
-                                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                            </div>
-                            <p className="text-[10px] text-yellow-800 leading-relaxed">
-                                {language === 'CN' 
-                                    ? 'Pro 模型调用成本较高，请确保您的 API Key 关联了计费项目 (Google Cloud)。' 
-                                    : 'Pro model incurs higher costs. Ensure your API Key is linked to a billing project in Google Cloud.'}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
                 {error && <div className="text-xs text-red-500 bg-red-50 p-2 rounded text-center">{error}</div>}
 
                 <Button 
@@ -655,11 +608,6 @@ export const TextToImageView: React.FC<TextToImageViewProps> = ({ onViewImage, i
                             className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500"
                             onClick={() => handleOpenLightbox(index)}
                           />
-                          
-                          {/* Overlay */}
-                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 pointer-events-none" />
-                          
-                          {/* Actions */}
                           <button 
                              onClick={(e) => handleDelete(item.id, e)}
                              className="absolute top-2 right-2 bg-white/90 text-red-500 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50"

@@ -6,16 +6,12 @@ import { HistoryPanel } from './components/HistoryPanel';
 import { AnalyzeView } from './components/AnalyzeView';
 import { TextToImageView } from './components/TextToImageView';
 import { ImageToImageView } from './components/ImageToImageView';
+import { PresetView } from './components/PresetView';
 import { SettingsModal } from './components/SettingsModal';
 import { Button } from './components/Button';
-import { HistoryItem, Language } from './types';
+import { HistoryItem, Language, LightboxItem } from './types';
 import { addMetadataToBase64Image } from './utils/imageUtils';
 import { TRANSLATIONS } from './constants';
-
-interface LightboxItem {
-  url: string;
-  prompt?: string;
-}
 
 interface LightboxState {
   items: LightboxItem[];
@@ -123,11 +119,17 @@ function App() {
   const handleSendToTxt2Img = (prompt: string) => {
     setTransferredPrompt(prompt);
     setActiveTab('TXT2IMG');
+    setLightboxData(null); // Close lightbox when transferring
   };
 
-  const handleSaveApiKey = (key: string) => {
+  const handleSaveApiKey = (key: string, baseUrl?: string) => {
     setApiKey(key);
     localStorage.setItem('gemini_api_key', key);
+    if (baseUrl && baseUrl.trim().length > 0) {
+      localStorage.setItem('gemini_base_url', baseUrl);
+    } else {
+      localStorage.removeItem('gemini_base_url');
+    }
   };
 
   const currentItem = lightboxData ? lightboxData.items[lightboxData.currentIndex] : null;
@@ -213,7 +215,7 @@ function App() {
             <AnalyzeView 
                 onAddToHistory={handleAddToHistory} 
                 initialPrompt={initialPrompt} 
-                onViewImage={(url) => setLightboxData({ items: [{ url }], currentIndex: 0 })}
+                onViewImage={(items, index) => setLightboxData({ items, currentIndex: index })}
                 onSendToTxt2Img={handleSendToTxt2Img}
                 language={language}
             />
@@ -221,7 +223,7 @@ function App() {
         
         <div className={activeTab === 'TXT2IMG' ? 'block' : 'hidden'}>
             <TextToImageView 
-              onViewImage={(index, items) => setLightboxData({ items, currentIndex: index })} 
+              onViewImage={(items, index) => setLightboxData({ items, currentIndex: index })} 
               initialPrompt={transferredPrompt}
               language={language}
             />
@@ -229,90 +231,121 @@ function App() {
 
         <div className={activeTab === 'IMG2IMG' ? 'block' : 'hidden'}>
             <ImageToImageView 
-              onViewImage={(index, items) => setLightboxData({ items, currentIndex: index })} 
+              onViewImage={(items, index) => setLightboxData({ items, currentIndex: index })} 
               language={language}
+            />
+        </div>
+
+        <div className={activeTab === 'PRESETS' ? 'block' : 'hidden'}>
+            <PresetView 
+               onViewImage={(items, index) => setLightboxData({ items, currentIndex: index })} 
+               language={language}
             />
         </div>
       </main>
 
-      {/* Lightbox Modal (Split View with Nav) */}
+      {/* Lightbox Modal (Redesigned) */}
       {lightboxData && currentItem && (
           <div 
-            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200"
+            className="fixed inset-0 z-50 bg-white/30 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in duration-300"
             onClick={() => setLightboxData(null)}
           >
              {/* Close Button */}
-             <button className="absolute top-6 right-6 text-white/70 hover:text-white transition-colors z-50" onClick={() => setLightboxData(null)}>
-                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+             <button className="absolute top-4 right-4 bg-white/80 p-2 rounded-full hover:bg-white text-gray-500 hover:text-gray-900 transition-all z-50 shadow-sm" onClick={() => setLightboxData(null)}>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
              </button>
 
-             {/* Navigation Buttons (Left/Right) */}
+             {/* Navigation Buttons */}
              {lightboxData.items.length > 1 && (
                <>
                  <button 
                    onClick={handlePrev}
                    disabled={lightboxData.currentIndex === 0}
-                   className="absolute left-4 top-1/2 -translate-y-1/2 p-3 text-white/50 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed transition-all z-50 hover:bg-white/10 rounded-full"
+                   className="absolute left-6 top-1/2 -translate-y-1/2 p-4 text-gray-400 hover:text-gray-900 disabled:opacity-20 disabled:cursor-not-allowed transition-all z-50 hover:bg-white/50 rounded-full"
                  >
-                   <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                   <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" /></svg>
                  </button>
                  <button 
                    onClick={handleNext}
                    disabled={lightboxData.currentIndex === lightboxData.items.length - 1}
-                   className="absolute right-4 top-1/2 -translate-y-1/2 p-3 text-white/50 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed transition-all z-50 hover:bg-white/10 rounded-full"
+                   className="absolute right-6 top-1/2 -translate-y-1/2 p-4 text-gray-400 hover:text-gray-900 disabled:opacity-20 disabled:cursor-not-allowed transition-all z-50 hover:bg-white/50 rounded-full"
                  >
-                   <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                   <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" /></svg>
                  </button>
                </>
              )}
              
              <div 
-               className="flex flex-col lg:flex-row bg-white rounded-2xl shadow-2xl overflow-hidden max-w-6xl w-full max-h-[90vh]" 
+               className="flex flex-col lg:flex-row bg-white rounded-3xl shadow-2xl overflow-hidden max-w-[1400px] w-full h-[85vh] border border-gray-100"
                onClick={(e) => e.stopPropagation()}
              >
-               {/* Left: Image (Dark bg for contrast) */}
-               <div className="flex-1 bg-black/5 flex items-center justify-center p-4 min-h-[400px] lg:min-h-0 relative">
-                  <div className="absolute inset-0 pattern-grid opacity-10 pointer-events-none"></div>
+               {/* Left: Image Canvas */}
+               <div className="flex-1 bg-gray-50/50 flex items-center justify-center p-8 relative group">
+                  <div className="absolute inset-0 pattern-grid opacity-5 pointer-events-none"></div>
                   <img 
                    src={currentItem.url} 
-                   alt={`Generated ${lightboxData.currentIndex + 1}`} 
-                   className="max-w-full max-h-full object-contain rounded shadow-sm" 
+                   alt="Generated" 
+                   className="max-w-full max-h-full object-contain rounded-lg shadow-soft transition-transform duration-300 group-hover:scale-[1.01]" 
                   />
-                  {/* Counter */}
+                  
+                  {/* Footer Stats inside Image Area */}
                   {lightboxData.items.length > 1 && (
-                     <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white text-xs px-3 py-1 rounded-full backdrop-blur-md">
+                     <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-white/80 backdrop-blur text-gray-500 font-mono text-xs px-4 py-1.5 rounded-full shadow-sm border border-gray-100">
                         {lightboxData.currentIndex + 1} / {lightboxData.items.length}
                      </div>
                   )}
                </div>
                
-               {/* Right: Prompt & Actions */}
-               <div className="w-full lg:w-[400px] bg-white flex flex-col border-l border-gray-100">
-                  <div className="p-6 border-b border-gray-100">
-                     <h3 className="text-lg font-bold text-gray-800 mb-4">{t.promptTitle}</h3>
+               {/* Right: Details Panel */}
+               <div className="w-full lg:w-[420px] bg-white flex flex-col border-l border-gray-100 relative">
+                  
+                  {/* Header: Title & Meta */}
+                  <div className="p-6 border-b border-gray-50">
+                     <h2 className="text-2xl font-bold text-gray-900 mb-3 leading-tight">
+                        {currentItem.title || "Generated Artwork"}
+                     </h2>
                      
-                     {/* Toggle */}
+                     <div className="flex flex-wrap gap-2 mb-4">
+                        {currentItem.model && (
+                            <span className="px-2.5 py-1 bg-gray-100 text-gray-600 text-[10px] rounded-md font-bold uppercase tracking-wider">
+                                {currentItem.model}
+                            </span>
+                        )}
+                        {currentItem.ratio && (
+                            <span className="px-2.5 py-1 bg-gray-100 text-gray-600 text-[10px] rounded-md font-bold uppercase tracking-wider">
+                                {currentItem.ratio}
+                            </span>
+                        )}
+                         {currentItem.tags?.map(tag => (
+                            <span key={tag} className="px-2.5 py-1 bg-gray-100 text-gray-600 text-[10px] rounded-md font-bold uppercase tracking-wider">
+                                {tag}
+                            </span>
+                         ))}
+                     </div>
+
+                     {/* Language Switch */}
                      {currentItem.prompt && showTabs && (
-                       <div className="flex bg-gray-100 rounded-lg p-1 mb-2">
+                       <div className="flex bg-gray-100 rounded-lg p-1">
                           <button 
                             onClick={() => setLightboxTab('EN')}
-                            className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${lightboxTab === 'EN' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+                            className={`flex-1 py-1 text-xs font-bold rounded-md transition-all ${lightboxTab === 'EN' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
                           >
-                            English
+                            EN
                           </button>
                           <button 
                             onClick={() => setLightboxTab('CN')}
-                            className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${lightboxTab === 'CN' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+                            className={`flex-1 py-1 text-xs font-bold rounded-md transition-all ${lightboxTab === 'CN' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
                           >
-                            中文 (Chinese)
+                            中文
                           </button>
                        </div>
                      )}
                   </div>
 
-                  <div className="flex-1 overflow-y-auto p-6 bg-gray-50/50">
+                  {/* Body: Prompt */}
+                  <div className="flex-1 overflow-y-auto p-6 bg-white">
                       {currentItem.prompt ? (
-                          <div className="prose prose-sm max-w-none text-gray-600 font-mono text-xs leading-relaxed">
+                          <div className="text-gray-600 font-mono text-xs leading-relaxed whitespace-pre-wrap">
                               {showTabs ? (
                                   lightboxTab === 'EN' ? parsedPrompt.en : parsedPrompt.cn
                               ) : (
@@ -320,19 +353,47 @@ function App() {
                               )}
                           </div>
                       ) : (
-                          <div className="text-gray-400 text-sm italic text-center mt-10">
-                              No prompt data available for this image.
+                          <div className="flex flex-col items-center justify-center h-full text-gray-300 italic text-sm">
+                              <span>No prompt data available</span>
                           </div>
                       )}
                   </div>
 
-                  <div className="p-6 border-t border-gray-100 space-y-3 bg-white">
-                      <Button onClick={() => downloadImage(true)} className="w-full text-sm py-2 h-10" disabled={!currentItem.prompt}>
-                          {t.downloadWithMeta}
+                  {/* Footer: Actions */}
+                  <div className="p-6 bg-white border-t border-gray-50 space-y-3">
+                      {/* Primary Action */}
+                      <Button 
+                        variant="secondary"
+                        onClick={() => currentItem.prompt && handleSendToTxt2Img(currentItem.prompt)} 
+                        className="w-full h-11 text-sm bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 font-bold flex items-center justify-center gap-2" 
+                        disabled={!currentItem.prompt}
+                      >
+                         <svg className="w-4 h-4 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                         Generate with this Prompt
                       </Button>
-                      <Button variant="secondary" onClick={() => downloadImage(false)} className="w-full text-sm py-2 h-10">
-                          {t.downloadImage}
-                      </Button>
+
+                      <div className="grid grid-cols-2 gap-3">
+                         <button 
+                            onClick={() => downloadImage(false)}
+                            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-gray-200 text-gray-600 text-xs font-bold hover:bg-gray-50 transition-colors"
+                         >
+                             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                             Save Image
+                         </button>
+                         <button 
+                            onClick={() => downloadImage(true)}
+                            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-gray-200 text-gray-600 text-xs font-bold hover:bg-gray-50 transition-colors"
+                            title="Embeds prompt in PNG"
+                         >
+                             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
+                             Save + Meta
+                         </button>
+                      </div>
+                      
+                      {/* Hashtags Mock */}
+                      <div className="pt-2 text-[10px] text-gray-300 font-mono text-center">
+                          #minimalist #nature #photography #poster
+                      </div>
                   </div>
                </div>
              </div>
