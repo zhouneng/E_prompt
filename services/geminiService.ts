@@ -30,6 +30,45 @@ const getApiKey = async (requireKeySelection: boolean): Promise<string | undefin
   return process.env.API_KEY;
 };
 
+// --- RETRY LOGIC HELPER ---
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+async function retryOperation<T>(
+  operation: () => Promise<T>,
+  maxRetries: number = 3,
+  baseDelay: number = 2000
+): Promise<T> {
+  let lastError: any;
+
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await operation();
+    } catch (error: any) {
+      lastError = error;
+      
+      // Check for 429 (Too Many Requests) or 503 (Service Unavailable)
+      const status = error.status || error.response?.status;
+      const msg = error.message || "";
+      const isRateLimit = status === 429 || msg.includes('429') || msg.includes('Quota exceeded');
+      const isServerOverload = status === 503 || msg.includes('503') || msg.includes('Overloaded');
+
+      if (isRateLimit || isServerOverload) {
+        // Calculate delay with exponential backoff + jitter to prevent thundering herd
+        // Attempt 1: ~2s, Attempt 2: ~4s, Attempt 3: ~8s
+        const waitTime = baseDelay * Math.pow(2, i) + (Math.random() * 1000);
+        console.warn(`API Rate Limit hit (Attempt ${i + 1}/${maxRetries}). Retrying in ${Math.round(waitTime)}ms...`);
+        await delay(waitTime);
+        continue;
+      }
+
+      // If it's not a retryable error (e.g. 400 Bad Request, 403 Forbidden), throw immediately
+      throw error;
+    }
+  }
+
+  throw lastError;
+}
+
 // Helper to resize and convert File to Base64
 // This prevents XHR errors with large payloads by resizing images > 1536px
 const fileToGenerativePart = async (file: File) => {
@@ -98,35 +137,43 @@ const analyzeProductReference = async (apiKey: string, files: File[]): Promise<s
   const ai = new GoogleGenAI({ apiKey });
   const parts = await Promise.all(files.map(fileToGenerativePart));
   
-  try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: {
-        parts: [
-          ...parts,
-          { text: `
-            ROLE: Forensic Product Authenticator.
-            TASK: Extract a RIGID visual definition of the object in the image.
-            
-            CRITICAL OUTPUT RULES:
-            1. GEOMETRY: Describe the EXACT shape topology (e.g., "cylindrical with a tapered neck," "cuboid with rounded corners").
-            2. MATERIALS & FINISH: Define the surface physics (e.g., "brushed anodized aluminum," "glossy polycarbonate," "frosted glass").
-            3. BRANDING (CRITICAL): Transcribe ALL logos and text EXACTLY as seen. Note font style and color.
-            4. UNIQUE IDENTIFIERS: Mention specific scratches, buttons, seams, or design quirks that make this unique.
-            
-            OUTPUT FORMAT: A dense, objective technical specification block. No artistic fluff.
-            ` }
-        ]
-      },
-      config: {
-        temperature: 0.1, // Near zero for absolute factual consistency
-      }
-    });
-    return response.text || "";
-  } catch (e) {
-    console.error("Product analysis failed", e);
-    return "The specific product shown in the reference image.";
-  }
+  return retryOperation(async () => {
+    try {
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: {
+          parts: [
+            ...parts,
+            { text: `
+              ROLE: Forensic Product Authenticator.
+              TASK: Extract a RIGID visual definition of the object in the image.
+              
+              CRITICAL OUTPUT RULES:
+              1. GEOMETRY: Describe the EXACT shape topology (e.g., "cylindrical with a tapered neck," "cuboid with rounded corners").
+              2. MATERIALS & FINISH: Define the surface physics (e.g., "brushed anodized aluminum," "glossy polycarbonate," "frosted glass").
+              3. BRANDING (CRITICAL): Transcribe ALL logos and text EXACTLY as seen. Note font style and color.
+              4. UNIQUE IDENTIFIERS: Mention specific scratches, buttons, seams, or design quirks that make this unique.
+              
+              OUTPUT FORMAT: A dense, objective technical specification block. No artistic fluff.
+              ` }
+          ]
+        },
+        config: {
+          temperature: 0.1, // Near zero for absolute factual consistency
+        }
+      });
+      return response.text || "";
+    } catch (e) {
+      console.error("Product analysis failed", e);
+      // If it's a critical API error, let retryOperation handle it via re-throw
+      // Otherwise fallback
+      throw e; 
+    }
+  }).catch(e => {
+     // Fallback only after retries fail
+     console.warn("Product analysis final failure:", e);
+     return "The specific product shown in the reference image.";
+  });
 };
 
 // Internal helper to get a text description of the character from the reference image
@@ -186,24 +233,28 @@ const analyzeCharacterReference = async (
     `;
   }
 
-  try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: {
-        parts: [
-          ...parts,
-          { text: systemPrompt }
-        ]
-      },
-      config: {
-        temperature: 0.1, // Near zero for biological accuracy
-      }
-    });
-    return response.text || "";
-  } catch (e) {
-    console.error("Character analysis failed", e);
+  return retryOperation(async () => {
+    try {
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: {
+          parts: [
+            ...parts,
+            { text: systemPrompt }
+          ]
+        },
+        config: {
+          temperature: 0.1, // Near zero for biological accuracy
+        }
+      });
+      return response.text || "";
+    } catch (e) {
+       throw e;
+    }
+  }).catch(e => {
+    console.warn("Character analysis final failure:", e);
     return "The character shown in the reference image.";
-  }
+  });
 };
 
 export const generateImagePrompt = async (imageFile: File, includeCopywriting: boolean = false): Promise<string> => {
@@ -234,32 +285,34 @@ export const generateImagePrompt = async (imageFile: File, includeCopywriting: b
     `;
   }
 
-  try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: {
-        role: 'user',
-        parts: [
-            imagePart,
-            { text: `Analyze this image and generate the prompt.\n${copywritingInstruction}` }
-        ]
-      },
-      config: {
-        systemInstruction: SYSTEM_INSTRUCTION,
-        temperature: 0.4,
-      },
-    });
+  return retryOperation(async () => {
+    try {
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: {
+          role: 'user',
+          parts: [
+              imagePart,
+              { text: `Analyze this image and generate the prompt.\n${copywritingInstruction}` }
+          ]
+        },
+        config: {
+          systemInstruction: SYSTEM_INSTRUCTION,
+          temperature: 0.4,
+        },
+      });
 
-    const text = response.text;
-    if (!text) throw new Error("No description generated.");
-    return text;
-  } catch (error: any) {
-    console.error("Gemini API Error:", error);
-    if (error.message?.includes('403') || error.status === 403) {
-      throw new Error("Permission Denied (403). Please check your API Key. Ensure the Generative AI API is enabled in your Google Cloud Project.");
+      const text = response.text;
+      if (!text) throw new Error("No description generated.");
+      return text;
+    } catch (error: any) {
+      console.error("Gemini API Error:", error);
+      if (error.message?.includes('403') || error.status === 403) {
+        throw new Error("Permission Denied (403). Please check your API Key. Ensure the Generative AI API is enabled in your Google Cloud Project.");
+      }
+      throw error;
     }
-    throw error;
-  }
+  });
 };
 
 export const generateImagesFromPrompt = async (
@@ -332,6 +385,7 @@ export const generateImagesFromPrompt = async (
   if (productReferenceImages.length > 0) {
     
     if (strictProductConsistency) {
+        // Retry logic is already inside analyzeProductReference
         const productDescription = await analyzeProductReference(apiKey, productReferenceImages);
         productSection = `
         [PRIORITY 1: PRODUCT INTEGRITY (ABSOLUTE - STRICT MODE)]
@@ -365,6 +419,7 @@ export const generateImagesFromPrompt = async (
   // --- SECTION 2: CHARACTER (If applicable) ---
   let characterSection = "";
   if (characterReferenceImages.length > 0) {
+    // Retry logic is already inside analyzeCharacterReference
     const characterDescription = await analyzeCharacterReference(apiKey, characterReferenceImages, characterMode);
     
     let fusionDirective = "";
@@ -440,53 +495,70 @@ ${sceneSection}
       { text: finalPrompt }
   ];
 
-  // PARALLEL EXECUTION
-  const promises = Array.from({ length: count }).map(async () => {
-    try {
-      const response = await ai.models.generateContent({
-        model: modelName, 
-        contents: {
-          parts: allParts
-        },
-        config: {
-          imageConfig: {
-            aspectRatio: apiRatio
-          },
-          safetySettings: [
-             { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
-             { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
-             { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
-             { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH }
-          ]
-        }
-      });
+  // PARALLEL EXECUTION with individual retry
+  const promises = Array.from({ length: count }).map(async (_, index) => {
+    // Stagger starts slightly to reduce burst on free tier
+    // But since retryOperation adds jitter, explicit staggered timeout is also good practice
+    await delay(index * 500); 
 
-      if (response.candidates?.[0]?.content?.parts) {
-        for (const part of response.candidates[0].content.parts) {
-          if (part.inlineData) {
-            return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+    return retryOperation(async () => {
+        try {
+          const response = await ai.models.generateContent({
+            model: modelName, 
+            contents: {
+              parts: allParts
+            },
+            config: {
+              imageConfig: {
+                aspectRatio: apiRatio
+              },
+              safetySettings: [
+                { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
+                { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
+                { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
+                { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH }
+              ]
+            }
+          });
+
+          if (response.candidates?.[0]?.content?.parts) {
+            for (const part of response.candidates[0].content.parts) {
+              if (part.inlineData) {
+                return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+              }
+            }
           }
+          return null;
+        } catch (error: any) {
+          console.error("Single Image Gen Error:", error);
+          if (error.message?.includes('403') || error.status === 403) {
+              // 403 is permission, not retryable usually (unless transient auth)
+              if (window.aistudio) {
+                throw new Error("Permission Denied (403). The selected key may be invalid or missing permissions. Please reload to re-select key.");
+              }
+              throw new Error("Permission Denied (403). Your API Key cannot access this model. Please check billing or try 'Standard' model.");
+          }
+          // Throw so retryOperation catches it
+          throw error;
         }
-      }
-      return null;
-    } catch (error: any) {
-      console.error("Single Image Gen Error:", error);
-      if (error.message?.includes('403') || error.status === 403) {
-          // If we are in AI Studio env, we can try to reset the key, but for now just throw specific message
-          if (window.aistudio) {
-             throw new Error("Permission Denied (403). The selected key may be invalid or missing permissions. Please reload to re-select key.");
-          }
-          throw new Error("Permission Denied (403). Your API Key cannot access this model. Please check billing or try 'Standard' model.");
-      }
-      return null;
-    }
+    });
   });
 
-  const results = await Promise.all(promises);
-  const validImages = results.filter((img): img is string => img !== null);
+  // Use allSettled to allow some images to succeed even if others fail after retries
+  const results = await Promise.allSettled(promises);
+  const validImages: string[] = [];
+  
+  results.forEach(result => {
+      if (result.status === 'fulfilled' && result.value) {
+          validImages.push(result.value);
+      }
+  });
 
   if (validImages.length === 0) {
-    throw new Error("Failed to generate any images. Check console for details (e.g. 403 Permission Denied or safety blocks).");
+     // If all failed, check if we have a specific error message from the first failure
+     const firstRejection = results.find(r => r.status === 'rejected') as PromiseRejectedResult;
+     const errorMessage = firstRejection?.reason?.message || "Failed to generate any images due to rate limits or errors.";
+     throw new Error(errorMessage);
   }
 
   return validImages;
@@ -499,7 +571,6 @@ export const generateImageModification = async (imageFile: File, promptText: str
 
   const ai = new GoogleGenAI({ apiKey });
   
-  // Use resized image part
   let imagePart;
   try {
      imagePart = await fileToGenerativePart(imageFile);
@@ -507,49 +578,57 @@ export const generateImageModification = async (imageFile: File, promptText: str
      throw new Error("Failed to process input image.");
   }
   
-  // PARALLEL EXECUTION
-  const promises = Array.from({ length: count }).map(async () => {
-    try {
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-image',
-        contents: {
-          parts: [
-            imagePart,
-            { text: promptText }
-          ]
-        },
-        config: {
-           safetySettings: [
-             { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
-             { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
-             { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
-             { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH }
-          ]
-        }
-      });
+  const promises = Array.from({ length: count }).map(async (_, index) => {
+    await delay(index * 500); // Stagger
+    
+    return retryOperation(async () => {
+        try {
+          const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash-image',
+            contents: {
+              parts: [
+                imagePart,
+                { text: promptText }
+              ]
+            },
+            config: {
+              safetySettings: [
+                { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
+                { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
+                { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH },
+                { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH }
+              ]
+            }
+          });
 
-      if (response.candidates?.[0]?.content?.parts) {
-        for (const part of response.candidates[0].content.parts) {
-          if (part.inlineData) {
-             return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+          if (response.candidates?.[0]?.content?.parts) {
+            for (const part of response.candidates[0].content.parts) {
+              if (part.inlineData) {
+                return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+              }
+            }
           }
+          return null;
+        } catch (error: any) {
+          if (error.message?.includes('403') || error.status === 403) {
+              throw new Error("Permission Denied (403). Check your API Key permissions.");
+          }
+          throw error;
         }
-      }
-      return null;
-    } catch (error: any) {
-      console.error("Image Modification Error:", error);
-      if (error.message?.includes('403') || error.status === 403) {
-          throw new Error("Permission Denied (403). Check your API Key permissions.");
-      }
-      return null;
-    }
+    });
   });
 
-  const results = await Promise.all(promises);
-  const validImages = results.filter((img): img is string => img !== null);
+  const results = await Promise.allSettled(promises);
+  const validImages: string[] = [];
+  
+  results.forEach(result => {
+      if (result.status === 'fulfilled' && result.value) {
+          validImages.push(result.value);
+      }
+  });
 
   if (validImages.length === 0) {
-    throw new Error("Failed to modify image. Please try again.");
+    throw new Error("Failed to modify image. Please try again later (Rate Limit).");
   }
 
   return validImages;
