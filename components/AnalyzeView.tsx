@@ -90,6 +90,12 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
     return { english: currentPrompt, chinese: null };
   }, [currentPrompt]);
 
+  // 获取当前活动标签下的纯文本提示词
+  const activePromptText = useMemo(() => {
+    if (activeTab === 'ENGLISH') return parsedContent.english;
+    return parsedContent.chinese || parsedContent.english;
+  }, [activeTab, parsedContent]);
+
   const handleFileSelect = (file: File) => {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     const url = URL.createObjectURL(file);
@@ -218,7 +224,6 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
                <UploadZone onFileSelect={handleFileSelect} language={language} />
             ) : (
               <div className="flex flex-col gap-4">
-                {/* 仅在此容器内感应拖拽，不再使用全屏感应 */}
                 <div 
                   className={`bg-white p-2 rounded-3xl shadow-soft border transition-all duration-300 relative group overflow-hidden ${isDraggingOverImage ? 'border-primary-500 ring-4 ring-primary-100' : 'border-gray-100'}`}
                   onDragEnter={handleImageDragEnter}
@@ -231,10 +236,9 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
                       src={previewUrl!} 
                       alt="Target" 
                       className={`max-w-full h-full object-contain cursor-pointer transition-transform duration-500 ${isDraggingOverImage ? 'scale-95 opacity-50 grayscale' : 'scale-100'}`} 
-                      onClick={() => onViewImage([{ url: previewUrl!, id: 'preview', prompt: currentPrompt }], 0)} 
+                      onClick={() => onViewImage([{ url: previewUrl!, id: 'preview', prompt: activePromptText }], 0)} 
                     />
                     
-                    {/* 局部拖拽反馈浮层 */}
                     {isDraggingOverImage && (
                       <div className="absolute inset-0 z-10 flex flex-col items-center justify-center pointer-events-none animate-in fade-in zoom-in-95 duration-200">
                          <div className="bg-white/90 backdrop-blur-md p-6 rounded-full shadow-2xl scale-110 mb-4">
@@ -244,7 +248,6 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
                       </div>
                     )}
 
-                    {/* 更换图片快捷按钮 (非拖拽时可见) */}
                     {!isDraggingOverImage && (
                       <button 
                         onClick={() => fileInputRef.current?.click()}
@@ -282,11 +285,7 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
 
         {currentRecord && (
             <div ref={resultRef} className="animate-in fade-in slide-in-from-bottom-8 duration-700 w-full space-y-6">
-               
-               {/* 结果展示卡片 */}
                <div className="bg-white border border-gray-100 rounded-[2.5rem] p-8 lg:p-12 shadow-soft relative overflow-hidden group">
-                  
-                  {/* 版本指令回显 */}
                   {activeVersion?.subjectModifier && (
                     <div className="mb-8 animate-in slide-in-from-top-4 duration-500">
                        <div className="inline-flex items-center gap-3 px-5 py-2.5 bg-primary-50 border border-primary-100 rounded-2xl text-primary-700">
@@ -309,7 +308,6 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
                         )}
                     </div>
                     
-                    {/* 版本历史导航 */}
                     {currentRecord.versions.length > 1 && (
                       <div className="flex gap-2 overflow-x-auto no-scrollbar max-w-[350px] pb-1">
                         {currentRecord.versions.map((v, i) => (
@@ -329,24 +327,22 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
                   <div className="relative z-10">
                     <div className="bg-gray-50/50 rounded-3xl p-6 mb-8 border border-gray-100">
                       <p className="text-gray-700 leading-relaxed whitespace-pre-wrap text-sm lg:text-base font-medium selection:bg-primary-500 selection:text-white">
-                        {activeTab === 'ENGLISH' ? parsedContent.english : (parsedContent.chinese || parsedContent.english)}
+                        {activePromptText}
                       </p>
                     </div>
                     
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <Button onClick={() => onSendToTxt2Img(currentPrompt)} variant="secondary" className="w-full h-12 flex items-center justify-center space-x-2 rounded-2xl group">
+                      <Button onClick={() => onSendToTxt2Img(activePromptText)} variant="secondary" className="w-full h-12 flex items-center justify-center space-x-2 rounded-2xl group">
                         <span className="font-bold">{t.importToTxt2Img}</span>
                         <svg className="w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
                       </Button>
-                      <Button onClick={() => { navigator.clipboard.writeText(currentPrompt); alert('Copied!'); }} variant="ghost" className="w-full h-12 rounded-2xl font-bold">COPY TO CLIPBOARD</Button>
+                      <Button onClick={() => { navigator.clipboard.writeText(activePromptText); alert('Copied!'); }} variant="ghost" className="w-full h-12 rounded-2xl font-bold">COPY TO CLIPBOARD</Button>
                     </div>
                   </div>
                   
-                  {/* 水印 */}
                   <div className="absolute -bottom-10 -right-10 opacity-[0.05] pointer-events-none select-none text-[10rem] font-black italic tracking-tighter">DECODE</div>
                </div>
 
-               {/* 主体手术控制台 */}
                <div className="bg-gray-900 rounded-[2.5rem] p-8 border border-gray-800 shadow-2xl animate-in fade-in duration-700 ring-1 ring-white/5 relative overflow-hidden">
                   <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-3">
