@@ -7,6 +7,8 @@ import { AnalyzeView } from './components/AnalyzeView';
 import { TextToImageView } from './components/TextToImageView';
 import { ImageToImageView } from './components/ImageToImageView';
 import { PresetView } from './components/PresetView';
+import { ReferenceToImageView } from './components/ReferenceToImageView';
+import { TestModuleView } from './components/TestModuleView';
 import { SettingsModal } from './components/SettingsModal';
 import { Button } from './components/Button';
 import { HistoryItem, Language, LightboxItem } from './types';
@@ -229,6 +231,13 @@ function App() {
             />
         </div>
 
+        <div className={activeTab === 'REF2IMG' ? 'block' : 'hidden'}>
+            <ReferenceToImageView 
+              onViewImage={(items, index) => setLightboxData({ items, currentIndex: index })} 
+              language={language}
+            />
+        </div>
+
         <div className={activeTab === 'IMG2IMG' ? 'block' : 'hidden'}>
             <ImageToImageView 
               onViewImage={(items, index) => setLightboxData({ items, currentIndex: index })} 
@@ -238,6 +247,13 @@ function App() {
 
         <div className={activeTab === 'PRESETS' ? 'block' : 'hidden'}>
             <PresetView 
+               onViewImage={(items, index) => setLightboxData({ items, currentIndex: index })} 
+               language={language}
+            />
+        </div>
+
+        <div className={activeTab === 'TEST' ? 'block' : 'hidden'}>
+            <TestModuleView
                onViewImage={(items, index) => setLightboxData({ items, currentIndex: index })} 
                language={language}
             />

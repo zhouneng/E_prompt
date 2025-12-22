@@ -3,7 +3,7 @@ import React from 'react';
 import { Language } from '../types';
 import { TRANSLATIONS } from '../constants';
 
-export type TabType = 'ANALYZE' | 'TXT2IMG' | 'IMG2IMG' | 'PRESETS';
+export type TabType = 'ANALYZE' | 'TXT2IMG' | 'IMG2IMG' | 'PRESETS' | 'REF2IMG' | 'TEST';
 
 interface TabNavigationProps {
   activeTab: TabType;
@@ -25,6 +25,11 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, onTabCh
       label: t.txt2img,
       icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
     },
+    {
+      id: 'REF2IMG',
+      label: t.ref2img,
+      icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /><path d="M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" /></svg>
+    },
     { 
       id: 'IMG2IMG', 
       label: t.img2img,
@@ -34,6 +39,11 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, onTabCh
       id: 'PRESETS',
       label: t.presets,
       icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+    },
+    {
+      id: 'TEST',
+      label: t.test,
+      icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>
     }
   ];
 
