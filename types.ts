@@ -27,14 +27,33 @@ export interface LightboxItem {
   id: string;
   url: string;
   prompt?: string;
-  title?: string;     // e.g. "Christmas Portrait"
-  model?: string;     // e.g. "Gemini Flash"
-  ratio?: string;     // e.g. "3:4"
-  tags?: string[];    // e.g. ["Photography", "Portrait"]
+  title?: string;
+  model?: string;
+  ratio?: string;
+  tags?: string[];
   timestamp?: number;
 }
 
-// Add global window type for AI Studio integration
+export interface RHNodeInfo {
+  nodeId: string;
+  nodeTitle: string; // 新增：显示节点名称，如 "提示词"
+  fieldName: string;
+  fieldValue: string;
+  originalValue: string; // 用于判断是否被修改
+}
+
+export interface RHTask {
+  taskId: string;
+  workflowKey: string;
+  status: 'PENDING' | 'RUNNING' | 'SUCCESS' | 'FAILED';
+  progress: number;
+  resultUrls: string[];
+  timestamp: number;
+  errorMsg?: string;
+  startTime?: number;
+  endTime?: number;
+}
+
 declare global {
   interface AIStudio {
     hasSelectedApiKey: () => Promise<boolean>;

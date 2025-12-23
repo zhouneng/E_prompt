@@ -8,6 +8,7 @@ import { TextToImageView } from './components/TextToImageView';
 import { ImageToImageView } from './components/ImageToImageView';
 import { PresetView } from './components/PresetView';
 import { ReferenceToImageView } from './components/ReferenceToImageView';
+import { RunningHubView } from './components/RunningHubView';
 import { SettingsModal } from './components/SettingsModal';
 import { Button } from './components/Button';
 import { HistoryItem, Language, LightboxItem } from './types';
@@ -22,11 +23,9 @@ interface LightboxState {
 function App() {
   const [activeTab, setActiveTab] = useState<TabType>('ANALYZE');
   const [language, setLanguage] = useState<Language>('CN'); 
-  const t = TRANSLATIONS[language].lightbox;
   
-  // Settings / API Key State
+  // Settings State - API keys are now handled by process.env.API_KEY exclusively
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [apiKey, setApiKey] = useState(() => localStorage.getItem('gemini_api_key') || '');
   
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [history, setHistory] = useState<HistoryItem[]>(() => {
@@ -75,7 +74,7 @@ function App() {
   const handlePrev = (e?: React.MouseEvent) => {
     e?.stopPropagation();
     if (lightboxData && lightboxData.currentIndex > 0) {
-      setLightboxData({ ...lightboxData, currentIndex: lightboxData.currentIndex - 0 });
+      setLightboxData({ ...lightboxData, currentIndex: lightboxData.currentIndex - 1 });
     }
   };
 
@@ -120,17 +119,7 @@ function App() {
   const handleSendToTxt2Img = (prompt: string) => {
     setTransferredPrompt(prompt);
     setActiveTab('TXT2IMG');
-    setLightboxData(null); // Close lightbox when transferring
-  };
-
-  const handleSaveApiKey = (key: string, baseUrl?: string) => {
-    setApiKey(key);
-    localStorage.setItem('gemini_api_key', key);
-    if (baseUrl && baseUrl.trim().length > 0) {
-      localStorage.setItem('gemini_base_url', baseUrl);
-    } else {
-      localStorage.removeItem('gemini_base_url');
-    }
+    setLightboxData(null);
   };
 
   const currentItem = lightboxData ? lightboxData.items[lightboxData.currentIndex] : null;
@@ -143,7 +132,6 @@ function App() {
 
     if (withPrompt && currentItem.prompt) {
       try {
-        // Embed prompt into PNG metadata
         finalUrl = await addMetadataToBase64Image(currentItem.url, currentItem.prompt);
         filename += '-with-prompt';
       } catch (e) {
@@ -160,7 +148,6 @@ function App() {
     document.body.removeChild(link);
   };
 
-  // Helper to parse prompt for Lightbox
   const parsedPrompt = useMemo(() => {
     if (!currentItem?.prompt) return { en: '', cn: '' };
     const text = currentItem.prompt;
@@ -173,7 +160,6 @@ function App() {
         const cn = parts[1].trim();
         return { en, cn };
     }
-    // Fallback
     return { en: text, cn: text };
   }, [currentItem?.prompt]);
 
@@ -207,8 +193,6 @@ function App() {
       <SettingsModal 
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
-        onSave={handleSaveApiKey}
-        currentKey={apiKey}
       />
 
       <main className="flex-grow container mx-auto px-4 sm:px-6 py-8">
@@ -217,11 +201,19 @@ function App() {
                 onAddToHistory={handleAddToHistory} 
                 initialPrompt={initialPrompt} 
                 onViewImage={(items, index) => setLightboxData({ items, currentIndex: index })}
-                onSendToTxt2Img={handleSendToTxt2Img}
+                onSendToTxt2Img={(p) => { setTransferredPrompt(p); setActiveTab('RUNNINGHUB'); }}
                 language={language}
             />
         </div>
         
+        <div className={activeTab === 'RUNNINGHUB' ? 'block' : 'hidden'}>
+            <RunningHubView 
+                onViewImage={(items, index) => setLightboxData({ items, currentIndex: index })}
+                initialPrompt={transferredPrompt}
+                language={language}
+            />
+        </div>
+
         <div className={activeTab === 'TXT2IMG' ? 'block' : 'hidden'}>
             <TextToImageView 
               onViewImage={(items, index) => setLightboxData({ items, currentIndex: index })} 
@@ -252,155 +244,61 @@ function App() {
         </div>
       </main>
 
-      {/* Lightbox Modal (Redesigned) */}
+      {/* Lightbox Modal */}
       {lightboxData && currentItem && (
           <div 
             className="fixed inset-0 z-50 bg-white/30 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in duration-300"
             onClick={() => setLightboxData(null)}
           >
-             {/* Close Button */}
              <button className="absolute top-4 right-4 bg-white/80 p-2 rounded-full hover:bg-white text-gray-500 hover:text-gray-900 transition-all z-50 shadow-sm" onClick={() => setLightboxData(null)}>
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
              </button>
 
-             {/* Navigation Buttons */}
              {lightboxData.items.length > 1 && (
                <>
-                 <button 
-                   onClick={handlePrev}
-                   disabled={lightboxData.currentIndex === 0}
-                   className="absolute left-6 top-1/2 -translate-y-1/2 p-4 text-gray-400 hover:text-gray-900 disabled:opacity-20 disabled:cursor-not-allowed transition-all z-50 hover:bg-white/50 rounded-full"
-                 >
+                 <button onClick={handlePrev} disabled={lightboxData.currentIndex === 0} className="absolute left-6 top-1/2 -translate-y-1/2 p-4 text-gray-400 hover:text-gray-900 disabled:opacity-20 disabled:cursor-not-allowed transition-all z-50 hover:bg-white/50 rounded-full">
                    <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19l-7-7 7-7" /></svg>
                  </button>
-                 <button 
-                   onClick={handleNext}
-                   disabled={lightboxData.currentIndex === lightboxData.items.length - 1}
-                   className="absolute right-6 top-1/2 -translate-y-1/2 p-4 text-gray-400 hover:text-gray-900 disabled:opacity-20 disabled:cursor-not-allowed transition-all z-50 hover:bg-white/50 rounded-full"
-                 >
+                 <button onClick={handleNext} disabled={lightboxData.currentIndex === lightboxData.items.length - 1} className="absolute right-6 top-1/2 -translate-y-1/2 p-4 text-gray-400 hover:text-gray-900 disabled:opacity-20 disabled:cursor-not-allowed transition-all z-50 hover:bg-white/50 rounded-full">
                    <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" /></svg>
                  </button>
                </>
              )}
              
-             <div 
-               className="flex flex-col lg:flex-row bg-white rounded-3xl shadow-2xl overflow-hidden max-w-[1400px] w-full h-[85vh] border border-gray-100"
-               onClick={(e) => e.stopPropagation()}
-             >
-               {/* Left: Image Canvas */}
+             <div className="flex flex-col lg:flex-row bg-white rounded-3xl shadow-2xl overflow-hidden max-w-[1400px] w-full h-[85vh] border border-gray-100" onClick={(e) => e.stopPropagation()}>
                <div className="flex-1 bg-gray-50/50 flex items-center justify-center p-8 relative group">
                   <div className="absolute inset-0 pattern-grid opacity-5 pointer-events-none"></div>
-                  <img 
-                   src={currentItem.url} 
-                   alt="Generated" 
-                   className="max-w-full max-h-full object-contain rounded-lg shadow-soft transition-transform duration-300 group-hover:scale-[1.01]" 
-                  />
-                  
-                  {/* Footer Stats inside Image Area */}
+                  <img src={currentItem.url} alt="Generated" className="max-w-full max-h-full object-contain rounded-lg shadow-soft transition-transform duration-300 group-hover:scale-[1.01]" />
                   {lightboxData.items.length > 1 && (
-                     <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-white/80 backdrop-blur text-gray-500 font-mono text-xs px-4 py-1.5 rounded-full shadow-sm border border-gray-100">
-                        {lightboxData.currentIndex + 1} / {lightboxData.items.length}
-                     </div>
+                     <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-white/80 backdrop-blur text-gray-500 font-mono text-xs px-4 py-1.5 rounded-full shadow-sm border border-gray-100">{lightboxData.currentIndex + 1} / {lightboxData.items.length}</div>
                   )}
                </div>
-               
-               {/* Right: Details Panel */}
                <div className="w-full lg:w-[420px] bg-white flex flex-col border-l border-gray-100 relative">
-                  
-                  {/* Header: Title & Meta */}
                   <div className="p-6 border-b border-gray-50">
-                     <h2 className="text-2xl font-bold text-gray-900 mb-3 leading-tight">
-                        {currentItem.title || "Generated Artwork"}
-                     </h2>
-                     
+                     <h2 className="text-2xl font-bold text-gray-900 mb-3 leading-tight">{currentItem.title || "Generated Artwork"}</h2>
                      <div className="flex flex-wrap gap-2 mb-4">
-                        {currentItem.model && (
-                            <span className="px-2.5 py-1 bg-gray-100 text-gray-600 text-[10px] rounded-md font-bold uppercase tracking-wider">
-                                {currentItem.model}
-                            </span>
-                        )}
-                        {currentItem.ratio && (
-                            <span className="px-2.5 py-1 bg-gray-100 text-gray-600 text-[10px] rounded-md font-bold uppercase tracking-wider">
-                                {currentItem.ratio}
-                            </span>
-                        )}
-                         {currentItem.tags?.map(tag => (
-                            <span key={tag} className="px-2.5 py-1 bg-gray-100 text-gray-600 text-[10px] rounded-md font-bold uppercase tracking-wider">
-                                {tag}
-                            </span>
-                         ))}
+                        {currentItem.model && <span className="px-2.5 py-1 bg-gray-100 text-gray-600 text-[10px] rounded-md font-bold uppercase tracking-wider">{currentItem.model}</span>}
+                        {currentItem.ratio && <span className="px-2.5 py-1 bg-gray-100 text-gray-600 text-[10px] rounded-md font-bold uppercase tracking-wider">{currentItem.ratio}</span>}
+                         {currentItem.tags?.map(tag => <span key={tag} className="px-2.5 py-1 bg-gray-100 text-gray-600 text-[10px] rounded-md font-bold uppercase tracking-wider">{tag}</span>)}
                      </div>
-
-                     {/* Language Switch */}
                      {currentItem.prompt && showTabs && (
                        <div className="flex bg-gray-100 rounded-lg p-1">
-                          <button 
-                            onClick={() => setLightboxTab('EN')}
-                            className={`flex-1 py-1 text-xs font-bold rounded-md transition-all ${lightboxTab === 'EN' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
-                          >
-                            EN
-                          </button>
-                          <button 
-                            onClick={() => setLightboxTab('CN')}
-                            className={`flex-1 py-1 text-xs font-bold rounded-md transition-all ${lightboxTab === 'CN' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
-                          >
-                            中文
-                          </button>
+                          <button onClick={() => setLightboxTab('EN')} className={`flex-1 py-1 text-xs font-bold rounded-md transition-all ${lightboxTab === 'EN' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}>EN</button>
+                          <button onClick={() => setLightboxTab('CN')} className={`flex-1 py-1 text-xs font-bold rounded-md transition-all ${lightboxTab === 'CN' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}>中文</button>
                        </div>
                      )}
                   </div>
-
-                  {/* Body: Prompt */}
                   <div className="flex-1 overflow-y-auto p-6 bg-white">
-                      {currentItem.prompt ? (
-                          <div className="text-gray-600 font-mono text-xs leading-relaxed whitespace-pre-wrap">
-                              {showTabs ? (
-                                  lightboxTab === 'EN' ? parsedPrompt.en : parsedPrompt.cn
-                              ) : (
-                                  currentItem.prompt
-                              )}
-                          </div>
-                      ) : (
-                          <div className="flex flex-col items-center justify-center h-full text-gray-300 italic text-sm">
-                              <span>No prompt data available</span>
-                          </div>
-                      )}
+                      {currentItem.prompt ? <div className="text-gray-600 font-mono text-xs leading-relaxed whitespace-pre-wrap">{showTabs ? (lightboxTab === 'EN' ? parsedPrompt.en : parsedPrompt.cn) : currentItem.prompt}</div> : <div className="flex flex-col items-center justify-center h-full text-gray-300 italic text-sm"><span>No prompt data available</span></div>}
                   </div>
-
-                  {/* Footer: Actions */}
                   <div className="p-6 bg-white border-t border-gray-50 space-y-3">
-                      {/* Primary Action */}
-                      <Button 
-                        variant="secondary"
-                        onClick={() => currentItem.prompt && handleSendToTxt2Img(currentItem.prompt)} 
-                        className="w-full h-11 text-sm bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 font-bold flex items-center justify-center gap-2" 
-                        disabled={!currentItem.prompt}
-                      >
+                      <Button variant="secondary" onClick={() => currentItem.prompt && handleSendToTxt2Img(currentItem.prompt)} className="w-full h-11 text-sm bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 font-bold flex items-center justify-center gap-2" disabled={!currentItem.prompt}>
                          <svg className="w-4 h-4 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                          Generate with this Prompt
                       </Button>
-
                       <div className="grid grid-cols-2 gap-3">
-                         <button 
-                            onClick={() => downloadImage(false)}
-                            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-gray-200 text-gray-600 text-xs font-bold hover:bg-gray-50 transition-colors"
-                         >
-                             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                             Save Image
-                         </button>
-                         <button 
-                            onClick={() => downloadImage(true)}
-                            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-gray-200 text-gray-600 text-xs font-bold hover:bg-gray-50 transition-colors"
-                            title="Embeds prompt in PNG"
-                         >
-                             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
-                             Save + Meta
-                         </button>
-                      </div>
-                      
-                      {/* Hashtags Mock */}
-                      <div className="pt-2 text-[10px] text-gray-300 font-mono text-center">
-                          #minimalist #nature #photography #poster
+                         <button onClick={() => downloadImage(false)} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-gray-200 text-gray-600 text-xs font-bold hover:bg-gray-50 transition-colors"><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>Save Image</button>
+                         <button onClick={() => downloadImage(true)} className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-gray-200 text-gray-600 text-xs font-bold hover:bg-gray-50 transition-colors" title="Embeds prompt in PNG"><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>Save + Meta</button>
                       </div>
                   </div>
                </div>

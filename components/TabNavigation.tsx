@@ -3,7 +3,7 @@ import React from 'react';
 import { Language } from '../types';
 import { TRANSLATIONS } from '../constants';
 
-export type TabType = 'ANALYZE' | 'TXT2IMG' | 'IMG2IMG' | 'PRESETS' | 'REF2IMG';
+export type TabType = 'ANALYZE' | 'TXT2IMG' | 'IMG2IMG' | 'PRESETS' | 'REF2IMG' | 'RUNNINGHUB';
 
 interface TabNavigationProps {
   activeTab: TabType;
@@ -19,6 +19,11 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, onTabCh
       id: 'ANALYZE', 
       label: t.reverse,
       icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+    },
+    {
+      id: 'RUNNINGHUB',
+      label: t.runninghub,
+      icon: <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
     },
     { 
       id: 'TXT2IMG', 

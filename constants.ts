@@ -4,7 +4,6 @@ import { Language } from './types';
 export const APP_TITLE = "GEMINI REVERSE ENGINEER";
 export const APP_SUBTITLE = "Forensic Image-to-Prompt Analysis System";
 
-// The core instruction provided by the user
 export const SYSTEM_INSTRUCTION = `
 角色设定与核心目标：
 你现在的唯一身份是顶级的“图像反推提示词工程师”（Image-to-Prompt Reverse Engineer）。你的目标不是生成图像，而是对用户上传的任何图像进行法医级别的深度解构，并将其转化为一个极度详细、包罗万象的文本到图像（Text-to-Image）生成提示词。
@@ -42,45 +41,42 @@ export const SYSTEM_INSTRUCTION = `
 
 export interface PresetTemplate {
   id: string;
+  type: 'PRODUCT' | 'PORTRAIT';
+  icon: string;
+  color: string;
   title: Record<Language, string>;
   description: Record<Language, string>;
   prompt: string;
-  icon: string;
-  color: string;
-  type?: 'PORTRAIT' | 'PRODUCT';
 }
 
+// Fixed: Added missing PRESET_TEMPLATES export to resolve compilation error in PresetView.tsx
 export const PRESET_TEMPLATES: PresetTemplate[] = [
   {
-    id: 'christmas_portrait',
-    title: { EN: "Christmas Portrait", CN: "圣诞写真", RU: "Рождественский портрет" },
-    description: { EN: "Studio vibes with winter effects.", CN: "冬季圣诞主题。", RU: "Зимний портрет." },
-    prompt: `Professional studio portrait, Christmas winter theme, pure white seamless background. Real skin texture (visible pores and natural sheen). Natural makeup: pale pink blush, natural lip color. 
-    Studio setting: Pure white seamless background, professional soft lighting, gentle snowflakes falling on hair, knitted hat and scarf, winter atmosphere. 
-    Clothing: Bright red cable knit hat, Bright red chunky wool scarf, Black wool coat.
-    Technical specs: 85mm lens, f/1.8-2.8 wide aperture, shallow depth of field, natural soft studio lighting, photorealistic high-end fashion portrait quality, ultra-high detail, photography level resolution.
-    Atmosphere: Natural, warm, gentle expression, quiet and contemplative gaze, looking directly at camera.`,
-    icon: "🎄",
-    color: "from-red-400 to-green-500",
-    type: 'PORTRAIT'
+    id: 'cyberpunk-portrait',
+    type: 'PORTRAIT',
+    icon: '🌃',
+    color: 'from-blue-600 to-purple-600',
+    title: { EN: 'Cyberpunk Neon', CN: '赛博霓虹', RU: 'Киберпанк' },
+    description: { EN: 'High-tech low-life neon vibes', CN: '充满未来感的科技感与霓虹灯效', RU: 'Высокотехнологичный неоновый стиль' },
+    prompt: 'A cyberpunk portrait, neon lighting, rainy city background, highly detailed, futuristic clothing, synthwave aesthetic, 8k resolution.'
   },
   {
-    id: 'winter_sprite_collage',
-    title: { EN: "Winter Sprite Collage", CN: "雪景中的精灵", RU: "Зимний эльф коллаж" },
-    description: { EN: "Editorial winter poster style collage.", CN: "杂志风格多图拼贴。", RU: "Зимний постер коллаж." },
-    prompt: `Editorial winter poster style multi-panel collage with spontaneous iPhone photography aesthetic...`,
-    icon: "❄️",
-    color: "from-blue-300 to-indigo-400",
-    type: 'PORTRAIT'
+    id: 'id-photo',
+    type: 'PORTRAIT',
+    icon: '👤',
+    color: 'from-gray-400 to-gray-600',
+    title: { EN: 'Professional ID', CN: '证件照', RU: 'Фото на паспорт' },
+    description: { EN: 'Clean studio background portrait', CN: '干净的棚拍背景专业证件照', RU: 'Профессиональное студийное фото' },
+    prompt: 'A professional studio ID photo, solid light blue background, centered portrait, soft lighting, professional attire, clear facial features.'
   },
   {
-    id: 'tech_exploded_view',
-    title: { EN: "Tech Exploded View", CN: "超逼真爆炸视图", RU: "Технический разрез" },
-    description: { EN: "Ultra-detailed product breakdown.", CN: "超细节产品拆解。", RU: "Технический разбор." },
-    prompt: `Generate an ultra-detailed, hyperrealistic exploded technical view...`,
-    icon: "⚙️",
-    color: "from-slate-600 to-slate-800",
-    type: 'PRODUCT'
+    id: 'minimal-product',
+    type: 'PRODUCT',
+    icon: '📦',
+    color: 'from-amber-400 to-orange-500',
+    title: { EN: 'Minimal Product', CN: '极简产品', RU: 'Минимализм продукта' },
+    description: { EN: 'Clean minimalist product shot', CN: '极致简约的商业产品大片', RU: 'Чистый минималистичный снимок продукта' },
+    prompt: 'A high-end product photography shot, minimalist aesthetic, soft studio lighting, neutral background, sharp focus, 8k resolution.'
   }
 ];
 
@@ -91,7 +87,26 @@ export const TRANSLATIONS: Record<Language, any> = {
       txt2img: "Text to Image",
       img2img: "Image to Image",
       presets: "AI Portrait",
-      ref2img: "Ref Image Gen"
+      ref2img: "Ref Image Gen",
+      runninghub: "RH Workflow"
+    },
+    runninghub: {
+      title: "RunningHub Automation",
+      subtitle: "Execute complex ComfyUI workflows via API",
+      workflowKey: "Workflow Key",
+      workflowKeyPlaceholder: "Enter RH workflow key...",
+      nodeConfig: "Node Parameters",
+      nodeId: "Node ID",
+      fieldName: "Field Name",
+      fieldValue: "Value",
+      addTask: "Add Parameter",
+      run: "Run Workflow",
+      running: "Processing Task...",
+      history: "Task History",
+      status: "Status",
+      progress: "Progress",
+      noTask: "No tasks yet. Configure and run your workflow.",
+      apiKeyRequired: "RunningHub API Key is required in settings."
     },
     analyze: {
       title: "Decode The Visual Matrix",
@@ -115,55 +130,49 @@ export const TRANSLATIONS: Record<Language, any> = {
       copywriting: "Copywriting",
     },
     txt2img: {
-      title: "TEXT TO IMAGE",
-      promptPlaceholder: "Describe your image...",
-      generate: "Generate Images",
-      generating: "Synthesizing...",
-      productRef: "PRODUCT REF",
-      charRef: "CHARACTER REF",
-      addProduct: "ADD PRODUCT",
-      addChar: "ADD CHAR",
-      quantity: "QUANTITY",
-      galleryTitle: "GENERATION GALLERY",
-      delete: "Delete",
-      clickToEnlarge: "Click to Enlarge"
-    },
-    img2img: {
-      title: "IMAGE TO IMAGE",
-      sourceImage: "SOURCE IMAGE",
-      modPrompt: "MODIFICATION PROMPT",
-      modPlaceholder: "Describe how you want to modify this image...",
-      generate: "Generate Variations",
-      processing: "Processing...",
-      outputPreview: "OUTPUT PREVIEW AREA"
+      title: "Text to Image",
+      promptPlaceholder: "Describe what you want to see...",
+      generate: "Generate Image",
+      generating: "Generating...",
+      quantity: "Quantity",
+      productRef: "Product Reference",
+      charRef: "Character Reference",
+      galleryTitle: "Gallery",
+      delete: "Delete"
     },
     presets: {
-      title: "AI PRESET STUDIO",
-      selectStyle: "SELECT STYLE",
-      uploadFace: "UPLOAD SELFIE",
-      uploadProduct: "UPLOAD PRODUCT",
+      title: "AI Portrait Presets",
+      selectStyle: "Select Style",
+      uploadFace: "Upload Face Photo",
+      uploadProduct: "Upload Product Photo",
       generate: "Generate",
-      processing: "Developing...",
-      result: "RESULT"
+      processing: "Processing...",
+      result: "Result"
     },
     ref2img: {
-      title: "REFERENCE GEN",
+      title: "Reference Generation",
       refLabel: "Reference Image",
-      refHint: "Upload reference items",
-      promptLabel: "Describe generation...",
-      create: "CREATE",
+      refHint: "Click to upload reference",
+      promptLabel: "Prompt",
       model: "Model",
       quality: "Quality",
-      ratio: "Aspect Ratio",
+      ratio: "Ratio",
       quantity: "Quantity",
+      create: "Create",
       generating: "Generating...",
-      emptyState: "Start creating your masterpiece!"
+      emptyState: "Result will appear here"
     },
     lightbox: {
-      title: "Image Preview",
-      close: "Close",
-      next: "Next",
-      prev: "Previous"
+      generateWithPrompt: "Generate with this Prompt"
+    },
+    img2img: {
+      sourceImage: "Source Image",
+      modPrompt: "Modification Prompt",
+      modPlaceholder: "Describe the changes...",
+      generate: "Generate",
+      processing: "Processing...",
+      outputPreview: "Output Preview",
+      dropToReplace: "Drop to Replace"
     }
   },
   CN: {
@@ -172,7 +181,26 @@ export const TRANSLATIONS: Record<Language, any> = {
       txt2img: "文生图",
       img2img: "图生图",
       presets: "AI 写真",
-      ref2img: "参考生图"
+      ref2img: "参考生图",
+      runninghub: "RH 工作流"
+    },
+    runninghub: {
+      title: "RunningHub 自动化",
+      subtitle: "通过 API 调用复杂的 ComfyUI 工作流",
+      workflowKey: "工作流 Key",
+      workflowKeyPlaceholder: "输入 RunningHub 工作流唯一标识...",
+      nodeConfig: "节点参数映射",
+      nodeId: "节点 ID",
+      fieldName: "字段名",
+      fieldValue: "参数值",
+      addTask: "添加映射",
+      run: "发起任务",
+      running: "任务处理中...",
+      history: "任务历史记录",
+      status: "状态",
+      progress: "进度",
+      noTask: "暂无任务。请配置工作流并运行。",
+      apiKeyRequired: "请在设置中配置 RunningHub API Key。"
     },
     analyze: {
       title: "解码视觉矩阵",
@@ -197,54 +225,48 @@ export const TRANSLATIONS: Record<Language, any> = {
     },
     txt2img: {
       title: "文生图",
-      promptPlaceholder: "详细描述您想要生成的图像...",
-      generate: "生成图像",
-      generating: "合成中...",
+      promptPlaceholder: "描述你想看到的画面...",
+      generate: "立即生成",
+      generating: "正在生成中...",
+      quantity: "生成数量",
       productRef: "产品参考图",
-      charRef: "角色参考图",
-      addProduct: "添加产品",
-      addChar: "添加角色",
-      quantity: "数量",
-      galleryTitle: "生成记录画廊",
-      delete: "删除",
-      clickToEnlarge: "点击放大"
-    },
-    img2img: {
-      title: "图生图",
-      sourceImage: "源图像",
-      modPrompt: "修改提示词",
-      modPlaceholder: "描述您想如何修改此图像...",
-      generate: "生成变体",
-      processing: "处理中...",
-      outputPreview: "输出预览区域"
+      charRef: "人物参考图",
+      galleryTitle: "历史画廊",
+      delete: "删除"
     },
     presets: {
-      title: "AI 预设工作室",
+      title: "AI 写真写真/模板",
       selectStyle: "选择风格模板",
       uploadFace: "上传面部照片",
       uploadProduct: "上传产品照片",
-      generate: "生成大片",
-      processing: "冲印中...",
-      result: "生成结果"
+      generate: "开始制作",
+      processing: "正在处理中...",
+      result: "制作结果"
     },
     ref2img: {
-      title: "参考生图",
-      refLabel: "参考图片",
-      refHint: "上传参考主体",
-      promptLabel: "描述生成内容...",
-      create: "创作",
+      title: "参考图生成",
+      refLabel: "参考图像",
+      refHint: "点击上传参考图",
+      promptLabel: "提示词",
       model: "模型",
-      quality: "清晰度",
-      ratio: "宽高比",
+      quality: "质量",
+      ratio: "比例",
       quantity: "数量",
-      generating: "创作中...",
-      emptyState: "开始创作您的第一个作品吧！"
+      create: "开始生成",
+      generating: "生成中...",
+      emptyState: "生成结果将在此显示"
     },
     lightbox: {
-      title: "图片预览",
-      close: "关闭",
-      next: "下一张",
-      prev: "上一张"
+      generateWithPrompt: "使用此提示词生成"
+    },
+    img2img: {
+      sourceImage: "原图",
+      modPrompt: "修改指令",
+      modPlaceholder: "描述你想要修改的内容...",
+      generate: "生成修改",
+      processing: "处理中...",
+      outputPreview: "修改预览",
+      dropToReplace: "拖拽以替换"
     }
   },
   RU: {
@@ -253,79 +275,71 @@ export const TRANSLATIONS: Record<Language, any> = {
       txt2img: "Текст в изображение",
       img2img: "Изображение в изображение",
       presets: "AI Портрет",
-      ref2img: "Генерация по ссылке"
+      ref2img: "Генерация по ссылке",
+      runninghub: "RH Воркфлоу"
     },
-    analyze: {
-      title: "Декодирование визуальной матрицы",
-      subtitle: "Обратный инжиниринг изображения в высокоточный промпт.",
-      uploadTitle: "Перетащите изображение сюда",
-      uploadSubtitle: "JPG, PNG, WEBP",
-      dropToReplace: "ОТПУСТИТЕ ДЛЯ ЗАМЕНЫ",
-      analyzing: "Анализ топологии...",
-      changeImage: "Изменить изображение",
-      initSequence: "Запуск последовательности",
-      retry: "Повторить",
-      generatedPrompt: "СГЕНЕРИРОВАННЫЙ ПРОМПТ",
-      modifySubject: "ИЗМЕНИТЬ ОБЪЕКТ",
-      modifyPlaceholder: "Введите новый объект...",
-      applyModification: "Применить изменения",
-      modifying: "Изменение объекта...",
-      versionHistory: "ИСТОРИЯ ВЕРСИЙ",
-      original: "Оригинал",
-      version: "Версия",
-      importToTxt2Img: "Импорт в Текст-в-Изображение",
-      copywriting: "Копирайтинг",
+    runninghub: {
+      title: "RunningHub Автоматизация",
+      subtitle: "Запуск ComfyUI через API",
+      workflowKey: "Ключ воркфлоу",
+      workflowKeyPlaceholder: "Введите ключ RunningHub...",
+      nodeConfig: "Параметры узла",
+      nodeId: "ID узла",
+      fieldName: "Имя поля",
+      fieldValue: "Значение",
+      addTask: "Добавить",
+      run: "Запустить",
+      running: "В процессе...",
+      history: "История задач",
+      status: "Статус",
+      progress: "Прогресс",
+      noTask: "Задач пока нет.",
+      apiKeyRequired: "Требуется API ключ RunningHub."
     },
     txt2img: {
-      title: "ТЕКСТ В ИЗОБРАЖЕНИЕ",
-      promptPlaceholder: "Опишите изображение...",
+      title: "Текст в изображение",
+      promptPlaceholder: "Опишите, что вы хотите увидеть...",
       generate: "Сгенерировать",
-      generating: "Синтез...",
-      productRef: "РЕФЕРЕНС ПРОДУКТА",
-      charRef: "РЕФЕРЕНС ПЕРСОНАЖА",
-      addProduct: "ДОБ. ПРОДУКТ",
-      addChar: "ДОБ. ПЕРС.",
-      quantity: "КОЛИЧЕСТВО",
-      galleryTitle: "ГАЛЕРЕЯ ГЕНЕРАЦИЙ",
-      delete: "Удалить",
-      clickToEnlarge: "Нажмите для увеличения"
-    },
-    img2img: {
-      title: "ИЗОБРАЖЕНИЕ В ИЗОБРАЖЕНИЕ",
-      sourceImage: "ИСХОДНОЕ ИЗОБРАЖЕНИЕ",
-      modPrompt: "ПРОМПТ МОДИФИКАЦИИ",
-      modPlaceholder: "Опишите изменения...",
-      generate: "Сгенерировать",
-      processing: "Обработка...",
-      outputPreview: "ПРЕДПРОСМОТР"
+      generating: "Генерация...",
+      quantity: "Количество",
+      productRef: "Ссылка на продукт",
+      charRef: "Ссылка на персонажа",
+      galleryTitle: "Галерея",
+      delete: "Удалить"
     },
     presets: {
-      title: "AI СТУДИЯ",
-      selectStyle: "ВЫБЕРИТЕ СТИЛЬ",
-      uploadFace: "ЗАГРУЗИТЬ ЛИЦО",
-      uploadProduct: "ЗАГРУЗИТЬ ПРОДУКТ",
+      title: "AI Шаблоны",
+      selectStyle: "Выберите стиль",
+      uploadFace: "Загрузить лицо",
+      uploadProduct: "Загрузить продукт",
       generate: "Создать",
       processing: "Обработка...",
-      result: "РЕЗУЛЬТАТ"
+      result: "Результат"
     },
     ref2img: {
-      title: "ГЕНЕРАЦИЯ ПО ССЫЛКЕ",
-      refLabel: "Справочное изображение",
-      refHint: "Загрузите объекты",
-      promptLabel: "Опишите генерацию...",
-      create: "СОЗДАТЬ",
+      title: "Генерация по ссылке",
+      refLabel: "Эталонное изображение",
+      refHint: "Нажмите для загрузки",
+      promptLabel: "Промпт",
       model: "Модель",
       quality: "Качество",
-      ratio: "Соотношение сторон",
+      ratio: "Соотношение",
       quantity: "Количество",
+      create: "Создать",
       generating: "Генерация...",
-      emptyState: "Начните создавать шедевр!"
+      emptyState: "Результат появится здесь"
     },
     lightbox: {
-      title: "Просмотр изображения",
-      close: "Закрыть",
-      next: "След.",
-      prev: "Пред."
+      generateWithPrompt: "Сгенерировать с этим промптом"
+    },
+    img2img: {
+      sourceImage: "Исходное изображение",
+      modPrompt: "Промпт модификации",
+      modPlaceholder: "Опишите изменения...",
+      generate: "Создать",
+      processing: "Обработка...",
+      outputPreview: "Превью",
+      dropToReplace: "Перетащите для замены"
     }
   }
 };
