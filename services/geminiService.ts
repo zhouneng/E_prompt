@@ -22,20 +22,59 @@ const getApiKey = async (requireKeySelection: boolean): Promise<string | undefin
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-async function retryOperation<T>(operation: () => Promise<T>, maxRetries: number = 3, baseDelay: number = 2000): Promise<T> {
+/**
+ * 格式化 API 错误信息
+ */
+const formatError = (error: any): string => {
+  const msg = error?.message || String(error);
+  
+  // 识别配额超出 (429 Quota Exceeded)
+  if (msg.includes('429') || msg.includes('Quota') || msg.includes('limit: 0') || msg.includes('RESOURCE_EXHAUSTED')) {
+    return "API 配额已耗尽或触发频率限制。请稍后再试，或在设置中更换 API Key。 (Error 429: Quota Exceeded)";
+  }
+  
+  // 识别服务不可用 (503)
+  if (msg.includes('503') || msg.includes('Service Unavailable')) {
+    return "Gemini 服务暂时不可用，请稍后重试。 (Error 503: Service Unavailable)";
+  }
+
+  // 识别安全过滤 (Safety)
+  if (msg.includes('SAFETY') || msg.includes('blocked')) {
+    return "请求被安全过滤器拦截，请尝试调整提示词。 (Blocked by Safety Filters)";
+  }
+
+  // 识别无效密钥 (401/403)
+  if (msg.includes('401') || msg.includes('403') || msg.includes('API_KEY_INVALID')) {
+    return "API Key 无效或权限不足，请检查设置。 (Error 401/403: Invalid API Key)";
+  }
+
+  return msg;
+};
+
+async function retryOperation<T>(operation: () => Promise<T>, maxRetries: number = 2, baseDelay: number = 2000): Promise<T> {
   let lastError: any;
   for (let i = 0; i < maxRetries; i++) {
-    try { return await operation(); } catch (error: any) {
+    try { 
+      return await operation(); 
+    } catch (error: any) {
       lastError = error;
       const msg = error.message || "";
-      if (msg.includes('429') || msg.includes('503') || msg.includes('Quota')) {
+      
+      // 如果是明确的配额耗尽（limit: 0），不需要重试，直接抛出
+      if (msg.includes('limit: 0') || msg.includes('Quota exceeded')) {
+        throw new Error(formatError(error));
+      }
+
+      // 仅针对频率限制或临时服务错误进行指数退避重试
+      if (msg.includes('429') || msg.includes('503') || msg.includes('RESOURCE_EXHAUSTED')) {
         await delay(baseDelay * Math.pow(2, i));
         continue;
       }
-      throw error;
+      
+      throw new Error(formatError(error));
     }
   }
-  throw lastError;
+  throw new Error(formatError(lastError));
 }
 
 const fileToGenerativePart = async (file: File) => {
@@ -76,9 +115,6 @@ export const generateImagePrompt = async (imageFile: File, includeCopywriting: b
   });
 };
 
-/**
- * Optimized Subject Swap Service
- */
 export const modifyPromptSubject = async (originalPrompt: string, newSubject: string): Promise<string> => {
   const apiKey = await getApiKey(false);
   if (!apiKey) throw new Error("API Key missing.");
@@ -87,14 +123,7 @@ export const modifyPromptSubject = async (originalPrompt: string, newSubject: st
   const editInstruction = `
     ROLE: World-Class Visual Prompt Editor.
     TASK: Precisely swap the main subject of a prompt while keeping the entire visual DNA intact.
-    
-    GUIDELINES:
-    1. CATEGORY IDENTIFICATION: Identify the category of "${newSubject}" (e.g., electronic device, person, mythical creature).
-    2. SURGICAL SWAP: Replace the original subject (and its specific adjectives like "metallic projector") with "${newSubject}" and its appropriate high-end visual descriptors.
-    3. DNA PRESERVATION: Keep the background, lighting (e.g., "sunset glow"), camera specs (e.g., "85mm f/1.8"), color grading, and technical quality keywords exactly as they are.
-    4. LOGICAL COHERENCE: If the original subject was "on a wooden desk," the new subject should still be "on a wooden desk."
-    
-    OUTPUT FORMAT: Return both ## English Prompt and ## Chinese Prompt.
+    GUIDELINES: Replace subject while keeping style/technical DNA. Output in ## English Prompt and ## Chinese Prompt formats.
   `;
 
   return retryOperation(async () => {
@@ -132,7 +161,7 @@ export const generateImagesFromPrompt = async (
   if (modelName === 'nano-banana-2') {
       const baseUrl = getBaseUrl();
       const apiKey = await getApiKey(false);
-      if (!apiKey || !baseUrl) throw new Error("Proxy Nano model requires API Key and Base URL.");
+      if (!apiKey || !baseUrl) throw new Error("代理 Nano 模型需要配置 API Key 和 Base URL。");
       let cleanBaseUrl = baseUrl.replace(/\/v1beta\/?$/, '').replace(/\/$/, '');
       const endpoint = `${cleanBaseUrl}/v1/images/generations`;
       const refImages = [...productReferenceImages, ...characterReferenceImages];
@@ -145,6 +174,10 @@ export const generateImagesFromPrompt = async (
                  headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
                  body: JSON.stringify({ model: 'nano-banana-2', prompt: promptText, aspect_ratio: aspectRatio, image_size: imageSize, image: b64Images.length > 0 ? b64Images : undefined })
               });
+              if (!res.ok) {
+                  const errData = await res.json();
+                  throw new Error(errData?.error?.message || "Nano API request failed");
+              }
               const data = await res.json();
               return data.data?.[0]?.url;
            });
@@ -169,7 +202,8 @@ export const generateImagesFromPrompt = async (
             contents: { parts: allParts },
             config: { imageConfig }
         });
-        return response.candidates?.[0]?.content?.parts?.find(p => p.inlineData) ? `data:${response.candidates[0].content.parts.find(p => p.inlineData)!.inlineData!.mimeType};base64,${response.candidates[0].content.parts.find(p => p.inlineData)!.inlineData!.data}` : null;
+        const part = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
+        return part ? `data:${part.inlineData!.mimeType};base64,${part.inlineData!.data}` : null;
      });
      if (result) validImages.push(result);
   }
@@ -178,6 +212,7 @@ export const generateImagesFromPrompt = async (
 
 export const generateImageModification = async (imageFile: File, promptText: string, count: number = 1): Promise<string[]> => {
   const apiKey = await getApiKey(false);
+  if (!apiKey) throw new Error("API Key missing.");
   const ai = new GoogleGenAI({ apiKey, baseUrl: getBaseUrl() } as any);
   const imagePart = await fileToGenerativePart(imageFile);
   const validImages: string[] = [];
