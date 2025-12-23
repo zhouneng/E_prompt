@@ -3,31 +3,26 @@ import React from 'react';
 import { APP_TITLE, APP_SUBTITLE } from '../constants';
 import { Language } from '../types';
 
-interface HeaderProps {
+export const Header: React.FC<{
   onToggleHistory: () => void;
   onOpenSettings: () => void;
   language: Language;
   onSetLanguage: (lang: Language) => void;
-}
-
-export const Header: React.FC<HeaderProps> = ({ onToggleHistory, onOpenSettings, language, onSetLanguage }) => {
+}> = ({ onToggleHistory, onOpenSettings, language, onSetLanguage }) => {
   return (
     <header className="bg-white/80 backdrop-blur-lg sticky top-0 z-30 border-b border-gray-100/80">
       <div className="max-w-[1920px] mx-auto px-6 h-16 flex items-center justify-between">
         
         {/* Logo Section */}
         <div className="flex items-center space-x-3">
-          {/* Pink Bird Icon Mock */}
           <div className="text-primary-600">
             <svg viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8">
               <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
             </svg>
           </div>
           <div>
-            <h1 className="text-lg font-bold text-gray-800 tracking-tight flex items-center gap-2">
-              <span className="text-primary-600">图像反推工具箱</span>
-              <span className="text-gray-300">|</span>
-              <span className="text-primary-600">EKKO</span>
+            <h1 className="text-lg font-black text-primary-600 tracking-tighter">
+              AIGC ToolBox
             </h1>
           </div>
         </div>

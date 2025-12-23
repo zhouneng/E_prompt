@@ -8,7 +8,6 @@ import { TextToImageView } from './components/TextToImageView';
 import { ImageToImageView } from './components/ImageToImageView';
 import { PresetView } from './components/PresetView';
 import { ReferenceToImageView } from './components/ReferenceToImageView';
-import { TestModuleView } from './components/TestModuleView';
 import { SettingsModal } from './components/SettingsModal';
 import { Button } from './components/Button';
 import { HistoryItem, Language, LightboxItem } from './types';
@@ -76,7 +75,7 @@ function App() {
   const handlePrev = (e?: React.MouseEvent) => {
     e?.stopPropagation();
     if (lightboxData && lightboxData.currentIndex > 0) {
-      setLightboxData({ ...lightboxData, currentIndex: lightboxData.currentIndex - 1 });
+      setLightboxData({ ...lightboxData, currentIndex: lightboxData.currentIndex - 0 });
     }
   };
 
@@ -247,13 +246,6 @@ function App() {
 
         <div className={activeTab === 'PRESETS' ? 'block' : 'hidden'}>
             <PresetView 
-               onViewImage={(items, index) => setLightboxData({ items, currentIndex: index })} 
-               language={language}
-            />
-        </div>
-
-        <div className={activeTab === 'TEST' ? 'block' : 'hidden'}>
-            <TestModuleView
                onViewImage={(items, index) => setLightboxData({ items, currentIndex: index })} 
                language={language}
             />

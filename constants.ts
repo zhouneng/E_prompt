@@ -91,8 +91,7 @@ export const TRANSLATIONS: Record<Language, any> = {
       txt2img: "Text to Image",
       img2img: "Image to Image",
       presets: "AI Portrait",
-      ref2img: "Ref Image Gen",
-      test: "Test Module"
+      ref2img: "Ref Image Gen"
     },
     analyze: {
       title: "Decode The Visual Matrix",
@@ -173,8 +172,7 @@ export const TRANSLATIONS: Record<Language, any> = {
       txt2img: "文生图",
       img2img: "图生图",
       presets: "AI 写真",
-      ref2img: "参考生图",
-      test: "测试模块"
+      ref2img: "参考生图"
     },
     analyze: {
       title: "解码视觉矩阵",
@@ -255,8 +253,7 @@ export const TRANSLATIONS: Record<Language, any> = {
       txt2img: "Текст в изображение",
       img2img: "Изображение в изображение",
       presets: "AI Портрет",
-      ref2img: "Генерация по ссылке",
-      test: "Тестовый модуль"
+      ref2img: "Генерация по ссылке"
     },
     analyze: {
       title: "Декодирование визуальной матрицы",
