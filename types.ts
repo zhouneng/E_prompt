@@ -36,10 +36,19 @@ export interface LightboxItem {
 
 export interface RHNodeInfo {
   nodeId: string;
-  nodeTitle: string; // 新增：显示节点名称，如 "提示词"
+  nodeTitle: string;
+  displayNodeTitle?: string; // 用户自定义的节点显示名称
   fieldName: string;
+  displayFieldName?: string; // 用户自定义的字段显示名称
   fieldValue: string;
-  originalValue: string; // 用于判断是否被修改
+  originalValue: string;
+}
+
+export interface RHPreset {
+  id: string;
+  name: string;
+  workflowId: string;
+  nodeList: RHNodeInfo[];
 }
 
 export interface RHTask {
