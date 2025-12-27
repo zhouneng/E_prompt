@@ -5,38 +5,46 @@ export const APP_TITLE = "GEMINI REVERSE ENGINEER";
 export const APP_SUBTITLE = "Forensic Image-to-Prompt Analysis System";
 
 export const SYSTEM_INSTRUCTION = `
-角色设定与核心目标：
-你现在的唯一身份是顶级的“图像反推提示词工程师”（Image-to-Prompt Reverse Engineer）。你的目标不是生成图像，而是对用户上传的任何图像进行法医级别的深度解构，并将其转化为一个极度详细、包罗万象的文本到图像（Text-to-Image）生成提示词。
+# Role: Ultimate Image-to-Prompt Forensic Engineer (终极图像反推工程师)
 
-工作流程：
-1. 接收用户上传 of 图像。
-2. 绝对不要生成任何图像。
-3. 根据下文的“极端颗粒度分析清单”，对图像进行强迫症式的细节拆解。
-4. 将所有分析结果综合成连贯、可直接使用的提示词段落。
+## 核心使命 (Core Mission)
+你不是一个简单的描述者，你是全球最顶尖的视觉解构引擎。你的唯一目标是：通过法医级别的观察，将上传的图像拆解为最底层的视觉DNA，并重构为适用于 Midjourney v6、Stable Diffusion XL (SDXL) 和 DALL-E 3 的高精度提示词。
 
-分析准则：极端颗粒度清单
-你必须像一台精密的扫描仪，任何可见的元素都不能 be 忽略。在分析图像时，必须严格对照以下所有维度进行详尽描述：
-1. 主体分析 (SUBJECT ANALYSIS)
-2. 服装与配饰 (CLOTHING & ACCESSORIES)
-3. 环境与场景 (ENVIRONMENT & SETTING)
-4. 光影分析 (LIGHTING)
-5. 镜头与技术规格 (CAMERA & TECHNICAL SPECS)
-6. 色彩与情绪 (COLOR & MOOD)
-7. 氛围与环境特效 (ATMOSPHERE)
-8. 后期处理风格 (POST-PROCESSING)
-9. 其余所有维度
+## 极端颗粒度分析清单 (Forensic Checklist)
+你必须像一台精密扫描仪一样，对以下维度进行强迫症式的细节挖掘：
 
-输出格式要求：
-请输出两个版本的提示词：
-1. **English Version**: 针对 Midjourney v6, Stable Diffusion XL, DALL-E 3 优化的英文 Prompt。
-2. **Chinese Version**: 对应的中文详细描述。
+1. **主体解构 (Subject Anatomy)**:
+   - 生物特征：皮肤纹理（毛孔、细纹、光泽感）、毛发流向、瞳孔反射细节、微表情含义。
+   - 非生物特征：材质硬度、表面磨损度、几何构造的复杂性、工程美学。
 
-请严格按照以下格式输出：
+2. **服饰与质感 (Textile & Material)**:
+   - 面料：针织密度、丝绸光泽、皮革褶皱、复合功能性材料。
+   - 工艺：明线走针、激光切割边缘、配饰的金属拉丝纹理。
+
+3. **光影物理学 (Lighting Physics)**:
+   - 光源：主灯、侧逆光、轮廓光、全局照明（GI）、环境光遮蔽（AO）。
+   - 属性：色温（热调/冷调）、硬度（硬光锐利/柔光细腻）、丁达尔效应、体积光。
+
+4. **环境与场景 (Architectural & Environment)**:
+   - 空间：透视关系、遮挡层级、材质反射率（如雨后地面的镜像反射）。
+   - 风格：具体到建筑风格（极简、野兽派、赛博朋克、维多利亚等）。
+
+5. **镜头与工业参数 (Cinematography & Specs)**:
+   - 器材：模拟特定机身（Sony A7R V, Hasselblad X2D）与镜头（35mm f/1.4, 85mm f/1.2）。
+   - 效果：景深快慢、动态模糊、胶片颗粒感（Kodak Portra 400 风格）。
+
+6. **色彩空间与情绪 (Color & Mood)**:
+   - 调色：具体的色卡组合、电影级校色（Teal & Orange）、色彩饱和度分布。
+   - 情绪：孤独、宏大、静谧、压抑、极度写实。
+
+## 输出规范 (Output Standard)
+严禁生成任何图像。你必须且只能输出以下两个版本的提示词：
+
 ## English Prompt
-[在此处插入英文 Prompt]
+[在此处输出针对 Midjourney 和 SDXL 优化的高密度英文提示词，包含所有法医级细节和技术参数]
 
 ## Chinese Prompt
-[在此处插入中文 Prompt]
+[在此处输出对应的中文详细描述，侧重于意境还原和细节拆解，字数不少于 200 字]
 `;
 
 export interface PresetTemplate {
@@ -58,15 +66,6 @@ export const PRESET_TEMPLATES: PresetTemplate[] = [
     title: { EN: 'Cyberpunk Neon', CN: '赛博霓虹', RU: 'Киберпанк' },
     description: { EN: 'High-tech low-life neon vibes', CN: '充满未来感的科技感与霓虹灯效', RU: 'Высокотехнологичный неоновый стиль' },
     prompt: 'A cyberpunk portrait, neon lighting, rainy city background, highly detailed, futuristic clothing, synthwave aesthetic, 8k resolution.'
-  },
-  {
-    id: 'id-photo',
-    type: 'PORTRAIT',
-    icon: '👤',
-    color: 'from-gray-400 to-gray-600',
-    title: { EN: 'Professional ID', CN: '证件照', RU: 'Фото на паспорт' },
-    description: { EN: 'Clean studio background portrait', CN: '干净的棚拍背景专业证件照', RU: 'Профессиональное студийное foto' },
-    prompt: 'A professional studio ID photo, solid light blue background, centered portrait, soft lighting, professional attire, clear facial features.'
   }
 ];
 
@@ -128,6 +127,17 @@ export const TRANSLATIONS: Record<Language, any> = {
       version: "Version",
       importToTxt2Img: "Transfer",
       copywriting: "Copywriter",
+      featureTransfer: "Visual DNA Transfer",
+      featureSubtitle: "Replace specific features from reference",
+      transferBtn: "Execute Transfer",
+      uploadRef: "Upload Reference",
+      transferring: "Surgically Merging...",
+      transferHint: "Select the features you want to extract from the reference image.",
+      featChar: "Character",
+      featCloth: "Clothing",
+      featAccess: "Accessories",
+      featShoes: "Footwear",
+      featProduct: "Product Details"
     },
     txt2img: {
       title: "Text to Image",
@@ -157,7 +167,7 @@ export const TRANSLATIONS: Record<Language, any> = {
       model: "Model",
       quality: "Quality",
       ratio: "Ratio",
-      quantity: "Quantity",
+      quantity: "Count",
       create: "Create",
       generating: "Generating...",
       emptyState: "Result will appear here"
@@ -229,6 +239,17 @@ export const TRANSLATIONS: Record<Language, any> = {
       version: "修改版",
       importToTxt2Img: "导入到文生图",
       copywriting: "智能文案",
+      featureTransfer: "视觉特征迁移",
+      featureSubtitle: "精确替换人物特征、服装、配饰、鞋子或产品细节",
+      transferBtn: "执行特征替换",
+      uploadRef: "上传特征图",
+      transferring: "正在进行视觉手术...",
+      transferHint: "请开启下方开关，选择要从特征图中提取并迁移到原场景的特征：",
+      featChar: "人物特征",
+      featCloth: "服装款式",
+      featAccess: "配饰详情",
+      featShoes: "鞋子款式",
+      featProduct: "产品特征"
     },
     txt2img: {
       title: "文生图",
@@ -330,6 +351,17 @@ export const TRANSLATIONS: Record<Language, any> = {
       version: "Версия",
       importToTxt2Img: "Перенос",
       copywriting: "Текст",
+      featureTransfer: "Перенос ДНК",
+      featureSubtitle: "Замена персонажа и одежды",
+      transferBtn: "Выполнить",
+      uploadRef: "Загрузить реф",
+      transferring: "Слияние...",
+      transferHint: "Выберите черты для переноса.",
+      featChar: "Персонаж",
+      featCloth: "Одежда",
+      featAccess: "Аксессуары",
+      featShoes: "Обувь",
+      featProduct: "Продукт"
     },
     txt2img: {
       title: "Текст в фото",

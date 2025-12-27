@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { Header } from './components/Header';
-import { TabNavigation, TabType } from './components/TabNavigation';
+import { Sidebar, TabType } from './components/TabNavigation';
 import { HistoryPanel } from './components/HistoryPanel';
 import { AnalyzeView } from './components/AnalyzeView';
 import { TextToImageView } from './components/TextToImageView';
@@ -13,7 +13,6 @@ import { SettingsModal } from './components/SettingsModal';
 import { Button } from './components/Button';
 import { HistoryItem, Language, LightboxItem } from './types';
 import { addMetadataToBase64Image } from './utils/imageUtils';
-import { TRANSLATIONS } from './constants';
 
 interface LightboxState {
   items: LightboxItem[];
@@ -24,9 +23,8 @@ function App() {
   const [activeTab, setActiveTab] = useState<TabType>('ANALYZE');
   const [language, setLanguage] = useState<Language>('CN'); 
   
-  // Settings State - API keys are now handled by process.env.API_KEY exclusively
+  // Settings State
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [history, setHistory] = useState<HistoryItem[]>(() => {
     try {
@@ -78,11 +76,9 @@ function App() {
     }
   };
 
-  // Keyboard Navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!lightboxData) return;
-      
       switch(e.key) {
         case 'ArrowRight':
           if (lightboxData.currentIndex < lightboxData.items.length - 1) {
@@ -99,7 +95,6 @@ function App() {
           break;
       }
     };
-
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [lightboxData]);
@@ -126,10 +121,8 @@ function App() {
 
   const downloadImage = async (withPrompt: boolean) => {
     if (!currentItem) return;
-
     let finalUrl = currentItem.url;
     let filename = `generated-${Date.now()}`;
-
     if (withPrompt && currentItem.prompt) {
       try {
         finalUrl = await addMetadataToBase64Image(currentItem.url, currentItem.prompt);
@@ -139,7 +132,6 @@ function App() {
         alert("Could not embed prompt metadata. Downloading raw image.");
       }
     }
-
     const link = document.createElement('a');
     link.href = finalUrl;
     link.download = `${filename}.png`;
@@ -153,7 +145,6 @@ function App() {
     const text = currentItem.prompt;
     const engMarker = '## English Prompt';
     const cnMarker = '## Chinese Prompt';
-    
     if (text.includes(engMarker) && text.includes(cnMarker)) {
         const parts = text.split(cnMarker);
         const en = parts[0].replace(engMarker, '').trim();
@@ -166,20 +157,72 @@ function App() {
   const showTabs = parsedPrompt.en !== parsedPrompt.cn;
 
   return (
-    <div className="min-h-screen bg-[#fcfcfc] flex flex-col font-sans text-gray-800">
-      <Header 
-        onToggleHistory={() => setIsHistoryOpen(true)}
-        onOpenSettings={() => setIsSettingsOpen(true)}
+    <div className="flex h-screen bg-[#fcfcfc] font-sans text-gray-800 overflow-hidden">
+      
+      {/* Sidebar - Fixed Left */}
+      <Sidebar 
+        activeTab={activeTab} 
+        onTabChange={setActiveTab} 
         language={language}
-        onSetLanguage={setLanguage}
       />
 
-      <div className="container mx-auto px-4 sm:px-6 pt-6">
-          <TabNavigation 
-            activeTab={activeTab} 
-            onTabChange={setActiveTab} 
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col h-full relative overflow-hidden">
+         <Header 
+            onToggleHistory={() => setIsHistoryOpen(true)}
+            onOpenSettings={() => setIsSettingsOpen(true)}
             language={language}
-          />
+            onSetLanguage={setLanguage}
+         />
+
+         <main className="flex-1 overflow-y-auto p-6 lg:p-10 scroll-smooth">
+            <div className={activeTab === 'ANALYZE' ? 'block h-full' : 'hidden'}>
+                <AnalyzeView 
+                    onAddToHistory={handleAddToHistory} 
+                    initialPrompt={initialPrompt} 
+                    onViewImage={(items, index) => setLightboxData({ items, currentIndex: index })}
+                    onSendToTxt2Img={(p) => { setTransferredPrompt(p); setActiveTab('RUNNINGHUB'); }}
+                    language={language}
+                />
+            </div>
+            
+            <div className={activeTab === 'RUNNINGHUB' ? 'block h-full' : 'hidden'}>
+                <RunningHubView 
+                    onViewImage={(items, index) => setLightboxData({ items, currentIndex: index })}
+                    initialPrompt={transferredPrompt}
+                    language={language}
+                />
+            </div>
+
+            <div className={activeTab === 'TXT2IMG' ? 'block h-full' : 'hidden'}>
+                <TextToImageView 
+                  onViewImage={(items, index) => setLightboxData({ items, currentIndex: index })} 
+                  initialPrompt={transferredPrompt}
+                  language={language}
+                />
+            </div>
+
+            <div className={activeTab === 'REF2IMG' ? 'block h-full' : 'hidden'}>
+                <ReferenceToImageView 
+                  onViewImage={(items, index) => setLightboxData({ items, currentIndex: index })} 
+                  language={language}
+                />
+            </div>
+
+            <div className={activeTab === 'IMG2IMG' ? 'block h-full' : 'hidden'}>
+                <ImageToImageView 
+                  onViewImage={(items, index) => setLightboxData({ items, currentIndex: index })} 
+                  language={language}
+                />
+            </div>
+
+            <div className={activeTab === 'PRESETS' ? 'block h-full' : 'hidden'}>
+                <PresetView 
+                   onViewImage={(items, index) => setLightboxData({ items, currentIndex: index })} 
+                   language={language}
+                />
+            </div>
+         </main>
       </div>
 
       <HistoryPanel 
@@ -195,59 +238,10 @@ function App() {
         onClose={() => setIsSettingsOpen(false)}
       />
 
-      <main className="flex-grow container mx-auto px-4 sm:px-6 py-8">
-        <div className={activeTab === 'ANALYZE' ? 'block' : 'hidden'}>
-            <AnalyzeView 
-                onAddToHistory={handleAddToHistory} 
-                initialPrompt={initialPrompt} 
-                onViewImage={(items, index) => setLightboxData({ items, currentIndex: index })}
-                onSendToTxt2Img={(p) => { setTransferredPrompt(p); setActiveTab('RUNNINGHUB'); }}
-                language={language}
-            />
-        </div>
-        
-        <div className={activeTab === 'RUNNINGHUB' ? 'block' : 'hidden'}>
-            <RunningHubView 
-                onViewImage={(items, index) => setLightboxData({ items, currentIndex: index })}
-                initialPrompt={transferredPrompt}
-                language={language}
-            />
-        </div>
-
-        <div className={activeTab === 'TXT2IMG' ? 'block' : 'hidden'}>
-            <TextToImageView 
-              onViewImage={(items, index) => setLightboxData({ items, currentIndex: index })} 
-              initialPrompt={transferredPrompt}
-              language={language}
-            />
-        </div>
-
-        <div className={activeTab === 'REF2IMG' ? 'block' : 'hidden'}>
-            <ReferenceToImageView 
-              onViewImage={(items, index) => setLightboxData({ items, currentIndex: index })} 
-              language={language}
-            />
-        </div>
-
-        <div className={activeTab === 'IMG2IMG' ? 'block' : 'hidden'}>
-            <ImageToImageView 
-              onViewImage={(items, index) => setLightboxData({ items, currentIndex: index })} 
-              language={language}
-            />
-        </div>
-
-        <div className={activeTab === 'PRESETS' ? 'block' : 'hidden'}>
-            <PresetView 
-               onViewImage={(items, index) => setLightboxData({ items, currentIndex: index })} 
-               language={language}
-            />
-        </div>
-      </main>
-
       {/* Lightbox Modal */}
       {lightboxData && currentItem && (
           <div 
-            className="fixed inset-0 z-50 bg-white/30 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in duration-300"
+            className="fixed inset-0 z-[60] bg-white/30 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in duration-300"
             onClick={() => setLightboxData(null)}
           >
              <button className="absolute top-4 right-4 bg-white/80 p-2 rounded-full hover:bg-white text-gray-500 hover:text-gray-900 transition-all z-50 shadow-sm" onClick={() => setLightboxData(null)}>

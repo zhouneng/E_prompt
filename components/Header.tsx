@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { APP_TITLE, APP_SUBTITLE } from '../constants';
 import { Language } from '../types';
 
 export const Header: React.FC<{
@@ -10,23 +9,7 @@ export const Header: React.FC<{
   onSetLanguage: (lang: Language) => void;
 }> = ({ onToggleHistory, onOpenSettings, language, onSetLanguage }) => {
   return (
-    <header className="bg-white/80 backdrop-blur-lg sticky top-0 z-30 border-b border-gray-100/80">
-      <div className="max-w-[1920px] mx-auto px-6 h-16 flex items-center justify-between">
-        
-        {/* Logo Section */}
-        <div className="flex items-center space-x-3">
-          <div className="text-primary-600">
-            <svg viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
-            </svg>
-          </div>
-          <div>
-            <h1 className="text-lg font-black text-primary-600 tracking-tighter">
-              AIGC ToolBox
-            </h1>
-          </div>
-        </div>
-        
+    <header className="bg-white/80 backdrop-blur-lg sticky top-0 z-30 border-b border-gray-100/80 px-6 h-16 flex items-center justify-end w-full">
         {/* Right Actions */}
         <div className="flex items-center space-x-3">
           {/* Language Switcher */}
@@ -62,14 +45,9 @@ export const Header: React.FC<{
             className="flex items-center space-x-2 text-xs font-bold text-gray-800 bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-full transition-colors"
           >
              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-             <span>Settings</span>
+             <span className="hidden sm:inline">Settings</span>
           </button>
-          
-          <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-400">
-             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
-          </div>
         </div>
-      </div>
     </header>
   );
 };
