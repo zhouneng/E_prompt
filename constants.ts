@@ -77,7 +77,8 @@ export const TRANSLATIONS: Record<Language, any> = {
       img2img: "Img2Img",
       presets: "Portrait",
       ref2img: "RefGen",
-      runninghub: "Workflow"
+      runninghub: "Workflow",
+      ecommerce: "KV Strategy"
     },
     runninghub: {
       title: "RUNNINGHUB",
@@ -137,7 +138,8 @@ export const TRANSLATIONS: Record<Language, any> = {
       featCloth: "Clothing",
       featAccess: "Accessories",
       featShoes: "Footwear",
-      featProduct: "Product Details"
+      featProduct: "Product Details",
+      featBackground: "Background Environment"
     },
     txt2img: {
       title: "Text to Image",
@@ -180,6 +182,14 @@ export const TRANSLATIONS: Record<Language, any> = {
       processing: "Processing...",
       outputPreview: "Output Preview",
       dropToReplace: "Drop to Replace"
+    },
+    ecommerce: {
+      title: "Commercial KV Pro",
+      subtitle: "Deconstruct product DNA and architect 10-poster visual strategy",
+      styleLabel: "Aesthetic Direction",
+      generate: "Architect Strategy",
+      analyzing: "Strategizing DNA...",
+      resultTitle: "Visual Identity Blueprint"
     }
   },
   CN: {
@@ -189,7 +199,8 @@ export const TRANSLATIONS: Record<Language, any> = {
       img2img: "图生图",
       presets: "AI 写真",
       ref2img: "参考生图",
-      runninghub: "RH 工作流"
+      runninghub: "RH 工作流",
+      ecommerce: "电商全案"
     },
     runninghub: {
       title: "RUNNINGHUB",
@@ -249,7 +260,8 @@ export const TRANSLATIONS: Record<Language, any> = {
       featCloth: "服装款式",
       featAccess: "配饰详情",
       featShoes: "鞋子款式",
-      featProduct: "产品特征"
+      featProduct: "产品特征",
+      featBackground: "替换背景环境"
     },
     txt2img: {
       title: "文生图",
@@ -292,6 +304,14 @@ export const TRANSLATIONS: Record<Language, any> = {
       processing: "处理中...",
       outputPreview: "修改预览",
       dropToReplace: "拖拽以替换"
+    },
+    ecommerce: {
+      title: "电商全案 KV 专家",
+      subtitle: "深度解构产品 DNA，规划 10 张海报视觉全案。",
+      styleLabel: "视觉风格选择",
+      generate: "生成全案策划",
+      analyzing: "正在规划全案 DNA...",
+      resultTitle: "视觉识别系统蓝图"
     }
   },
   RU: {
@@ -301,7 +321,8 @@ export const TRANSLATIONS: Record<Language, any> = {
       img2img: "Фото в фото",
       presets: "Портрет",
       ref2img: "RefGen",
-      runninghub: "Процесс"
+      runninghub: "Процесс",
+      ecommerce: "KV Стратегия"
     },
     runninghub: {
       title: "RUNNINGHUB",
@@ -361,7 +382,8 @@ export const TRANSLATIONS: Record<Language, any> = {
       featCloth: "Одежда",
       featAccess: "Аксессуары",
       featShoes: "Обувь",
-      featProduct: "Продукт"
+      featProduct: "Продукт",
+      featBackground: "Replace Background"
     },
     txt2img: {
       title: "Текст в фото",
@@ -404,6 +426,14 @@ export const TRANSLATIONS: Record<Language, any> = {
       processing: "В процессе...",
       outputPreview: "Предпросмотр",
       dropToReplace: "Заменить"
+    },
+    ecommerce: {
+      title: "Ecommerce KV Pro",
+      subtitle: "Разработка стратегии визуального ДНК из 10 постеров",
+      styleLabel: "Эстетическое направление",
+      generate: "Создать стратегию",
+      analyzing: "Планирование...",
+      resultTitle: "Отчет о визуальной идентичности"
     }
   }
 };

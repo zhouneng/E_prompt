@@ -17,8 +17,8 @@ interface AnalyzeViewProps {
 interface PromptVersion {
   id: string;
   prompt: string;
-  subjectModifier?: string;
-  transferModifier?: boolean;
+  modifierType: 'ORIGINAL' | 'SUBJECT' | 'DNA_TRANSFER';
+  modifierValue?: string;
   timestamp: number;
 }
 
@@ -40,17 +40,14 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
 }) => {
   const t = TRANSLATIONS[language].analyze;
   
-  // App Core State
   const [appState, setAppState] = useState<AppState>(AppState.IDLE);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [error, setError] = useState<ErrorState | null>(null);
   
-  // Modification State
   const [subjectModifier, setSubjectModifier] = useState("");
   const [isModifying, setIsModifying] = useState(false);
 
-  // Transfer State
   const [refFile, setRefFile] = useState<File | null>(null);
   const [refPreview, setRefPreview] = useState<string | null>(null);
   const [isTransferring, setIsTransferring] = useState(false);
@@ -59,10 +56,10 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
     clothing: true,
     accessories: false,
     shoes: false,
-    product: false
+    product: false,
+    background: false
   });
   
-  // UI States
   const [activeTab, setActiveTab] = useState<'ENGLISH' | 'CHINESE'>('ENGLISH');
   const [includeCopywriting, setIncludeCopywriting] = useState(false); 
   const [isDraggingOverImage, setIsDraggingOverImage] = useState(false);
@@ -71,13 +68,12 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
   const refDragCounter = useRef(0);
 
   const [currentRecord, setCurrentRecord] = useState<AnalyzedRecord | null>(null);
-  const resultRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const refFileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (initialPrompt && appState === AppState.IDLE) {
-      const initialVersion: PromptVersion = { id: 'orig', prompt: initialPrompt, timestamp: Date.now() };
+      const initialVersion: PromptVersion = { id: 'orig', prompt: initialPrompt, modifierType: 'ORIGINAL', timestamp: Date.now() };
       setCurrentRecord({
         id: crypto.randomUUID(),
         file: null,
@@ -114,7 +110,6 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
   const handleFileSelect = (file: File) => {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
     const url = URL.createObjectURL(file);
-    
     setSelectedFile(file);
     setPreviewUrl(url);
     setAppState(AppState.IDLE);
@@ -123,27 +118,23 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
     setSubjectModifier("");
     setRefFile(null);
     setRefPreview(null);
-    
     performAnalysis(file, includeCopywriting, url);
   };
 
   const handleRefFileSelect = (file: File) => {
-     if (refPreview) URL.revokeObjectURL(refPreview);
-     setRefFile(file);
-     setRefPreview(URL.createObjectURL(file));
+    if (refPreview) URL.revokeObjectURL(refPreview);
+    setRefFile(file);
+    setRefPreview(URL.createObjectURL(file));
   };
 
   const performAnalysis = async (file: File, useCopywriting: boolean, customPreview?: string) => {
     const url = customPreview || previewUrl;
     if (!url) return;
-    
     setAppState(AppState.ANALYZING);
     setError(null);
-
     try {
       const prompt = await generateImagePrompt(file, useCopywriting);
-      const initialVersion: PromptVersion = { id: 'orig', prompt, timestamp: Date.now() };
-      
+      const initialVersion: PromptVersion = { id: 'orig', prompt, modifierType: 'ORIGINAL', timestamp: Date.now() };
       const newRecord: AnalyzedRecord = {
         id: crypto.randomUUID(),
         file: file,
@@ -152,12 +143,9 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
         currentVersionIndex: 0,
         timestamp: Date.now()
       };
-      
       setCurrentRecord(newRecord);
       setAppState(AppState.SUCCESS);
       onAddToHistory({ id: newRecord.id, timestamp: Date.now(), prompt: prompt });
-
-      // No longer need to scroll, it's a split view
     } catch (err: any) {
       setAppState(AppState.ERROR);
       setError({ message: err.message || "Failed to analyze image." });
@@ -165,26 +153,23 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
   };
 
   const handleApplyModification = async () => {
-    if (!currentRecord || !subjectModifier.trim() || isModifying) return;
+    if (!currentRecord || !activeVersion || !subjectModifier.trim() || isModifying) return;
     setIsModifying(true);
-    
     try {
-      const originalPrompt = currentRecord.versions[0].prompt;
-      const modifiedPrompt = await modifyPromptSubject(originalPrompt, subjectModifier);
-      
+      const basePrompt = activeVersion.prompt;
+      const modifiedPrompt = await modifyPromptSubject(basePrompt, subjectModifier);
       const newVersion: PromptVersion = {
         id: crypto.randomUUID(),
         prompt: modifiedPrompt,
-        subjectModifier: subjectModifier,
+        modifierType: 'SUBJECT',
+        modifierValue: subjectModifier,
         timestamp: Date.now()
       };
-      
       setCurrentRecord(prev => prev ? ({
         ...prev,
         versions: [...prev.versions, newVersion],
         currentVersionIndex: prev.versions.length
       }) : null);
-      
       setSubjectModifier(""); 
     } catch (err: any) {
       alert(err.message || "Modification failed.");
@@ -194,24 +179,17 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
   };
 
   const handleExecuteTransfer = async () => {
-    if (!currentRecord || !refFile || isTransferring) return;
-    if (!Object.values(transferOptions).some(v => v)) {
-        alert("Please select at least one feature to transfer.");
-        return;
-    }
+    if (!currentRecord || !activeVersion || !refFile || isTransferring) return;
     setIsTransferring(true);
-
     try {
-      const originalPrompt = currentRecord.versions[0].prompt;
-      const transferredPrompt = await transferVisualFeatures(originalPrompt, refFile, transferOptions);
-
+      const basePrompt = activeVersion.prompt;
+      const transferredPrompt = await transferVisualFeatures(basePrompt, refFile, transferOptions);
       const newVersion: PromptVersion = {
         id: crypto.randomUUID(),
         prompt: transferredPrompt,
-        transferModifier: true,
+        modifierType: 'DNA_TRANSFER',
         timestamp: Date.now()
       };
-
       setCurrentRecord(prev => prev ? ({
         ...prev,
         versions: [...prev.versions, newVersion],
@@ -233,27 +211,24 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
     setTransferOptions(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
-  // Drag Handlers
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault(); e.stopPropagation();
+  };
+
   const handleImageDragEnter = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+    e.preventDefault(); e.stopPropagation();
     imageDragCounter.current++;
     if (e.dataTransfer.items && e.dataTransfer.items.length > 0) setIsDraggingOverImage(true);
   };
 
   const handleImageDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+    e.preventDefault(); e.stopPropagation();
     imageDragCounter.current--;
-    if (imageDragCounter.current <= 0) {
-      imageDragCounter.current = 0;
-      setIsDraggingOverImage(false);
-    }
+    if (imageDragCounter.current <= 0) { imageDragCounter.current = 0; setIsDraggingOverImage(false); }
   };
 
   const handleImageDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+    e.preventDefault(); e.stopPropagation();
     setIsDraggingOverImage(false);
     imageDragCounter.current = 0;
     const file = e.dataTransfer.files[0];
@@ -261,25 +236,19 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
   };
 
   const handleRefDragEnter = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+    e.preventDefault(); e.stopPropagation();
     refDragCounter.current++;
     if (e.dataTransfer.items && e.dataTransfer.items.length > 0) setIsDraggingOverRef(true);
   };
 
   const handleRefDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+    e.preventDefault(); e.stopPropagation();
     refDragCounter.current--;
-    if (refDragCounter.current <= 0) {
-      refDragCounter.current = 0;
-      setIsDraggingOverRef(false);
-    }
+    if (refDragCounter.current <= 0) { refDragCounter.current = 0; setIsDraggingOverRef(false); }
   };
 
   const handleRefDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+    e.preventDefault(); e.stopPropagation();
     setIsDraggingOverRef(false);
     refDragCounter.current = 0;
     const file = e.dataTransfer.files[0];
@@ -300,13 +269,11 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
         </div>
       ) : (
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 h-full items-start">
-            
-            {/* LEFT COLUMN: Source Image & Controls */}
             <div className="xl:col-span-4 flex flex-col gap-6 sticky top-0">
                <div 
                   className={`bg-white p-2 rounded-[2.5rem] shadow-soft border transition-all duration-300 relative group overflow-hidden ${isDraggingOverImage ? 'border-primary-500 ring-4 ring-primary-100' : 'border-gray-100'}`}
                   onDragEnter={handleImageDragEnter}
-                  onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                  onDragOver={handleDragOver}
                   onDragLeave={handleImageDragLeave}
                   onDrop={handleImageDrop}
                >
@@ -317,8 +284,6 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
                       className={`max-w-full max-h-full object-contain cursor-pointer transition-transform duration-500 ${isDraggingOverImage ? 'scale-95 opacity-50 grayscale' : 'scale-100'}`} 
                       onClick={() => onViewImage([{ url: previewUrl!, id: 'preview', prompt: activePromptText }], 0)} 
                     />
-                    
-                    {/* Drag Overlay */}
                     {isDraggingOverImage && (
                       <div className="absolute inset-0 z-10 flex flex-col items-center justify-center pointer-events-none animate-in fade-in zoom-in-95 duration-200">
                          <div className="bg-white/90 backdrop-blur-md p-6 rounded-full shadow-2xl scale-110 mb-4">
@@ -327,8 +292,6 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
                          <p className="text-lg font-black text-primary-600 tracking-tighter uppercase bg-white/80 px-4 py-1 rounded-full">{t.dropToReplace}</p>
                       </div>
                     )}
-                    
-                    {/* Change Button */}
                     {!isDraggingOverImage && (
                       <button 
                         onClick={() => fileInputRef.current?.click()}
@@ -342,7 +305,6 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
                   </div>
                </div>
 
-               {/* Controls */}
                <div className="bg-white border border-gray-100 rounded-3xl p-5 shadow-soft space-y-4">
                    <div className="flex items-center justify-between">
                        <span className="text-sm font-bold text-gray-600 flex items-center gap-2">
@@ -357,7 +319,6 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
                           <div className={`w-5 h-5 bg-white rounded-full shadow-sm transform transition-transform ${includeCopywriting ? 'translate-x-5' : 'translate-x-0'}`}></div>
                        </button>
                    </div>
-                   
                    <Button 
                       onClick={() => performAnalysis(selectedFile!, includeCopywriting)} 
                       isLoading={appState === AppState.ANALYZING}
@@ -368,10 +329,8 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
                </div>
             </div>
 
-            {/* RIGHT COLUMN: Results & Modifications */}
             <div className="xl:col-span-8 space-y-6 pb-20">
                {appState === AppState.ANALYZING ? (
-                 // Loading State
                  <div className="space-y-6">
                     <div className="bg-white border border-gray-100 rounded-[2.5rem] p-10 shadow-soft animate-pulse">
                         <div className="h-8 bg-gray-100 rounded-xl w-1/3 mb-6"></div>
@@ -381,16 +340,9 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
                            <div className="h-4 bg-gray-100 rounded-lg w-3/4"></div>
                         </div>
                     </div>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                       <div className="h-64 bg-gray-50 rounded-[2.5rem] animate-pulse"></div>
-                       <div className="h-64 bg-gray-50 rounded-[2.5rem] animate-pulse"></div>
-                    </div>
                  </div>
                ) : currentRecord ? (
-                 // Results State
                  <div className="space-y-8 animate-in slide-in-from-right-8 duration-700">
-                    
-                    {/* Prompt Card */}
                     <div className="bg-white border border-gray-100 rounded-[2.5rem] p-8 lg:p-10 shadow-soft relative overflow-hidden">
                        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-6">
                           <div className="flex items-center space-x-6">
@@ -413,18 +365,22 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
                                    onClick={() => handleVersionSwitch(i)}
                                    className={`px-4 py-2 rounded-xl text-[10px] font-bold border transition-all shrink-0 flex items-center gap-2 ${currentRecord.currentVersionIndex === i ? 'bg-primary-600 border-primary-600 text-white shadow-lg' : 'bg-gray-50 text-gray-400 border-gray-100 hover:border-gray-200'}`}
                                  >
-                                   <span className="opacity-60">{i === 0 ? 'ORIG' : 'V'+i}</span>
-                                   <span className="truncate max-w-[80px]">{v.subjectModifier || (v.transferModifier ? 'DNA SWAP' : t.original)}</span>
+                                   <span className="opacity-60">{v.modifierType === 'ORIGINAL' ? 'ORIG' : 'V'+i}</span>
+                                   <span className="truncate max-w-[80px]">{v.modifierValue || (v.modifierType === 'DNA_TRANSFER' ? '🧬 DNA SWAP' : t.original)}</span>
                                  </button>
                               ))}
                             </div>
                           )}
                        </div>
 
-                       <div className="bg-gray-50/50 rounded-3xl p-6 mb-8 border border-gray-100">
+                       <div className="bg-gray-50/50 rounded-3xl p-6 mb-8 border border-gray-100 ring-4 ring-primary-50/50">
                            <p className="text-gray-700 leading-relaxed whitespace-pre-wrap text-sm lg:text-base font-medium selection:bg-primary-500 selection:text-white">
                              {activePromptText}
                            </p>
+                           <div className="mt-4 pt-4 border-t border-gray-100 flex items-center gap-2">
+                              <span className="text-[10px] font-black text-primary-400 uppercase tracking-widest">Base version: </span>
+                              <span className="text-[10px] text-gray-400 font-bold uppercase">{activeVersion?.modifierType}</span>
+                           </div>
                        </div>
                        
                        <div className="flex gap-4">
@@ -436,16 +392,14 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
                        </div>
                     </div>
 
-                    {/* Modification Grid */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        {/* Subject Panel */}
-                        <div className="bg-gray-900 rounded-[2.5rem] p-8 border border-gray-800 shadow-2xl relative overflow-hidden flex flex-col justify-between min-h-[350px]">
+                        <div className="bg-gray-900 rounded-[2.5rem] p-8 border border-gray-800 shadow-2xl relative overflow-hidden flex flex-col justify-between min-h-[380px]">
                            <div>
                               <div className="flex items-center gap-3 mb-6">
                                 <div className="w-10 h-10 bg-primary-500/10 rounded-2xl flex items-center justify-center text-primary-500 text-xl border border-primary-500/20">🔍</div>
                                 <div>
                                   <h4 className="text-sm font-black text-white uppercase tracking-widest">{t.modifySubject}</h4>
-                                  <p className="text-[10px] text-gray-500 font-bold uppercase tracking-tight">Simple Text Injection</p>
+                                  <p className="text-[10px] text-gray-500 font-bold uppercase tracking-tight">Cumulative modification</p>
                                 </div>
                               </div>
                               <div className="relative mb-6">
@@ -470,45 +424,51 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
                            </Button>
                         </div>
 
-                        {/* Feature Transfer Panel */}
-                        <div className="bg-white rounded-[2.5rem] p-8 border border-gray-100 shadow-soft relative overflow-hidden flex flex-col justify-between min-h-[350px]">
+                        <div className="bg-white rounded-[2.5rem] p-8 border border-gray-100 shadow-soft relative overflow-hidden flex flex-col justify-between min-h-[380px]">
                            <div>
                               <div className="flex items-center justify-between mb-4">
                                 <div className="flex items-center gap-3">
                                   <div className="w-10 h-10 bg-primary-50 rounded-2xl flex items-center justify-center text-primary-500 text-xl border border-primary-100">🧬</div>
                                   <div>
                                     <h4 className="text-sm font-black text-gray-800 uppercase tracking-widest">{t.featureTransfer}</h4>
-                                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">{t.featureSubtitle}</p>
+                                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">Inherited DNA swap</p>
                                   </div>
                                 </div>
                               </div>
-                              
                               <div className="flex gap-4 mb-4">
                                  <div 
-                                   className={`relative w-20 h-20 shrink-0 rounded-2xl border-2 border-dashed transition-all cursor-pointer overflow-hidden flex items-center justify-center ${isDraggingOverRef ? 'border-primary-500 bg-primary-50' : 'border-gray-200 bg-gray-50 hover:border-primary-300'}`}
+                                   className={`relative w-24 h-24 shrink-0 rounded-2xl border-2 border-dashed transition-all cursor-pointer overflow-hidden flex items-center justify-center ${isDraggingOverRef ? 'border-primary-500 bg-primary-50 scale-105 shadow-glow' : 'border-gray-200 bg-gray-50 hover:border-primary-300'}`}
                                    onClick={() => !isTransferring && refFileInputRef.current?.click()}
                                    onDragEnter={handleRefDragEnter}
-                                   onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                                   onDragOver={handleDragOver}
                                    onDragLeave={handleRefDragLeave}
                                    onDrop={handleRefDrop}
                                  >
                                     {refPreview ? (
                                       <img src={refPreview} alt="Reference" className="w-full h-full object-cover" />
                                     ) : (
-                                      <svg className="w-6 h-6 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                                      <div className="flex flex-col items-center">
+                                        <svg className="w-8 h-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                                        <span className="text-[8px] font-black text-gray-400 mt-1 uppercase tracking-tighter">Drop Ref</span>
+                                      </div>
+                                    )}
+                                    {isDraggingOverRef && (
+                                       <div className="absolute inset-0 bg-primary-500/10 flex items-center justify-center pointer-events-none">
+                                          <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg"><span className="text-primary-500 text-xl font-bold">+</span></div>
+                                       </div>
                                     )}
                                     <input type="file" ref={refFileInputRef} onChange={(e) => e.target.files?.[0] && handleRefFileSelect(e.target.files[0])} className="hidden" accept="image/*" />
                                  </div>
                                  <div className="flex-1">
                                     <div className="grid grid-cols-2 gap-2">
-                                        {(['character', 'clothing', 'accessories', 'shoes', 'product'] as const).map(key => (
+                                        {(['character', 'clothing', 'accessories', 'shoes', 'product', 'background'] as const).map(key => (
                                            <button 
                                               key={key}
                                               onClick={() => toggleTransferOption(key)}
-                                              className={`flex items-center gap-2 px-2 py-1.5 rounded-lg border text-[9px] font-black transition-all ${transferOptions[key] ? 'bg-primary-500 border-primary-500 text-white' : 'bg-white border-gray-100 text-gray-400'}`}
+                                              className={`flex items-center gap-2 px-2 py-2 rounded-lg border text-[9px] font-black transition-all ${transferOptions[key] ? 'bg-primary-500 border-primary-500 text-white shadow-sm scale-[1.02]' : 'bg-white border-gray-100 text-gray-400 hover:bg-gray-50'}`}
                                            >
-                                              <div className={`w-1.5 h-1.5 rounded-full ${transferOptions[key] ? 'bg-white' : 'bg-gray-200'}`}></div>
-                                              {key === 'character' ? t.featChar : key === 'clothing' ? t.featCloth : key === 'accessories' ? t.featAccess : key === 'shoes' ? t.featShoes : t.featProduct}
+                                              <div className={`w-1.5 h-1.5 rounded-full ${transferOptions[key] ? 'bg-white animate-pulse' : 'bg-gray-200'}`}></div>
+                                              {key === 'character' ? t.featChar : key === 'clothing' ? t.featCloth : key === 'accessories' ? t.featAccess : key === 'shoes' ? t.featShoes : key === 'product' ? t.featProduct : t.featBackground}
                                            </button>
                                         ))}
                                     </div>
@@ -518,7 +478,7 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
                            <Button 
                               onClick={handleExecuteTransfer}
                               isLoading={isTransferring}
-                              disabled={!refFile || isModifying || isTransferring || !Object.values(transferOptions).some(v => v)}
+                              disabled={!refPreview || isModifying || isTransferring || Object.values(transferOptions).every(v => v === false)}
                               className="w-full h-14 rounded-2xl font-black text-xs uppercase tracking-[0.2em] italic bg-gray-800 border-none shadow-none hover:bg-black"
                            >
                               {isTransferring ? t.transferring : t.transferBtn}
