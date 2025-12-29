@@ -35,13 +35,13 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 const formatError = (error: any): string => {
   const msg = error?.message || String(error);
   if (msg.includes('429') || msg.includes('Quota') || msg.includes('limit: 0') || msg.includes('RESOURCE_EXHAUSTED')) {
-    return "API 配额已耗尽或触发频率限制。请稍后再试。 (Error 429: Quota Exceeded)";
+    return "API Quota Exceeded (429). The shared key is exhausted. Please click 'Settings' and enter your own Google Gemini API Key.";
   }
   if (msg.includes('503') || msg.includes('Service Unavailable')) {
-    return "Gemini 服务暂时不可用，请稍后重试。 (Error 503: Service Unavailable)";
+    return "Gemini Service Unavailable (503). Please try again later.";
   }
   if (msg.includes('SAFETY') || msg.includes('blocked')) {
-    return "请求被安全过滤器拦截。 (Blocked by Safety Filters)";
+    return "Request blocked by safety filters. Please modify your image or prompt.";
   }
   return msg;
 };
@@ -52,8 +52,11 @@ async function retryOperation<T>(operation: () => Promise<T>, maxRetries: number
     try { return await operation(); } catch (error: any) {
       lastError = error;
       const msg = error.message || "";
-      if (msg.includes('limit: 0') || msg.includes('Quota exceeded')) throw new Error(formatError(error));
-      if (msg.includes('429') || msg.includes('503') || msg.includes('RESOURCE_EXHAUSTED')) {
+      // Don't retry if quota is exhausted (it won't fix itself in 2 seconds)
+      if (msg.includes('limit: 0') || msg.includes('Quota exceeded') || msg.includes('429')) {
+        throw new Error(formatError(error));
+      }
+      if (msg.includes('503') || msg.includes('RESOURCE_EXHAUSTED')) {
         await delay(baseDelay * Math.pow(2, i));
         continue;
       }

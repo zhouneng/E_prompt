@@ -11,6 +11,7 @@ interface AnalyzeViewProps {
   initialPrompt?: string;
   onViewImage: (items: LightboxItem[], index: number) => void;
   onSendToTxt2Img: (prompt: string) => void;
+  onOpenSettings: () => void;
   language: Language;
 }
 
@@ -36,6 +37,7 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
   initialPrompt, 
   onViewImage,
   onSendToTxt2Img,
+  onOpenSettings,
   language
 }) => {
   const t = TRANSLATIONS[language].analyze;
@@ -340,6 +342,20 @@ export const AnalyzeView: React.FC<AnalyzeViewProps> = ({
                            <div className="h-4 bg-gray-100 rounded-lg w-3/4"></div>
                         </div>
                     </div>
+                 </div>
+               ) : appState === AppState.ERROR ? (
+                 <div className="bg-red-50/80 border border-red-100 rounded-[2.5rem] p-10 flex flex-col items-center justify-center text-center space-y-6 animate-in zoom-in-95 duration-200">
+                    <div className="w-20 h-20 bg-red-100 text-red-500 rounded-full flex items-center justify-center text-3xl font-black">!</div>
+                    <div className="space-y-2 max-w-lg">
+                       <h3 className="text-xl font-bold text-red-700">Analysis Failed</h3>
+                       <p className="text-sm text-red-600 font-medium leading-relaxed">{error?.message}</p>
+                    </div>
+                    {error?.message?.includes("Quota") && (
+                       <Button onClick={onOpenSettings} className="bg-red-500 hover:bg-red-600 text-white border-none shadow-lg shadow-red-500/30">
+                          Open Settings to Set API Key
+                       </Button>
+                    )}
+                    <button onClick={() => performAnalysis(selectedFile!, includeCopywriting)} className="text-red-500 text-xs font-bold hover:underline">Try Again</button>
                  </div>
                ) : currentRecord ? (
                  <div className="space-y-8 animate-in slide-in-from-right-8 duration-700">

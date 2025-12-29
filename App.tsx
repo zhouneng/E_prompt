@@ -9,6 +9,7 @@ import { ImageToImageView } from './components/ImageToImageView';
 import { PresetView } from './components/PresetView';
 import { ReferenceToImageView } from './components/ReferenceToImageView';
 import { RunningHubView } from './components/RunningHubView';
+import { EcommerceKVView } from './components/EcommerceKVView';
 import { SettingsModal } from './components/SettingsModal';
 import { Button } from './components/Button';
 import { HistoryItem, Language, LightboxItem } from './types';
@@ -182,10 +183,19 @@ function App() {
                     initialPrompt={initialPrompt} 
                     onViewImage={(items, index) => setLightboxData({ items, currentIndex: index })}
                     onSendToTxt2Img={(p) => { setTransferredPrompt(p); setActiveTab('RUNNINGHUB'); }}
+                    onOpenSettings={() => setIsSettingsOpen(true)}
                     language={language}
                 />
             </div>
             
+            <div className={activeTab === 'ECOMMERCE' ? 'block h-full' : 'hidden'}>
+                <EcommerceKVView 
+                    onViewImage={(items, index) => setLightboxData({ items, currentIndex: index })}
+                    onOpenSettings={() => setIsSettingsOpen(true)}
+                    language={language}
+                />
+            </div>
+
             <div className={activeTab === 'RUNNINGHUB' ? 'block h-full' : 'hidden'}>
                 <RunningHubView 
                     onViewImage={(items, index) => setLightboxData({ items, currentIndex: index })}
@@ -198,6 +208,7 @@ function App() {
                 <TextToImageView 
                   onViewImage={(items, index) => setLightboxData({ items, currentIndex: index })} 
                   initialPrompt={transferredPrompt}
+                  onOpenSettings={() => setIsSettingsOpen(true)}
                   language={language}
                 />
             </div>

@@ -9,10 +9,11 @@ import { ModelCard, RatioIcon } from './GenerationCommon';
 interface TextToImageViewProps {
   onViewImage: (items: LightboxItem[], index: number) => void;
   initialPrompt?: string;
+  onOpenSettings: () => void;
   language: Language;
 }
 
-export const TextToImageView: React.FC<TextToImageViewProps> = ({ onViewImage, initialPrompt, language }) => {
+export const TextToImageView: React.FC<TextToImageViewProps> = ({ onViewImage, initialPrompt, onOpenSettings, language }) => {
   const t = TRANSLATIONS[language].txt2img;
   
   // --- Input State ---
@@ -126,8 +127,8 @@ export const TextToImageView: React.FC<TextToImageViewProps> = ({ onViewImage, i
           prompt, 
           imageCount, 
           aspectRatio, 
-          products,
-          chars,
+          products, 
+          chars, 
           'FULL_BODY',
           modelId,
           productConsistencyEnabled,
@@ -232,7 +233,6 @@ export const TextToImageView: React.FC<TextToImageViewProps> = ({ onViewImage, i
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-                {/* Reference zones omitted for brevity, keeping same as before but focus is on Error UI */}
                 <div className="space-y-2">
                     <label className="text-xs font-bold text-gray-800">{t.productRef}</label>
                     <div className="relative w-full aspect-[4/5] bg-gray-50 border-2 border-dashed rounded-xl transition-all cursor-pointer group flex flex-col items-center justify-center text-center p-4 overflow-hidden border-gray-200 hover:border-primary-400" onClick={() => mainInputRef.current?.click()}>
@@ -273,7 +273,12 @@ export const TextToImageView: React.FC<TextToImageViewProps> = ({ onViewImage, i
                         <p className="text-red-500 text-xs leading-relaxed font-medium">
                             {error}
                         </p>
-                        <button onClick={handleGenerate} className="mt-4 px-6 py-2 bg-red-500 text-white rounded-full text-xs font-bold hover:bg-red-600 transition-colors shadow-lg shadow-red-500/20">
+                        {error.includes("Quota") && (
+                           <Button onClick={onOpenSettings} className="bg-red-500 hover:bg-red-600 text-white text-xs px-4 py-2 h-auto rounded-lg shadow-none">
+                              Set API Key
+                           </Button>
+                        )}
+                        <button onClick={handleGenerate} className="mt-2 px-6 py-2 bg-white text-red-500 border border-red-200 rounded-full text-xs font-bold hover:bg-red-50 transition-colors">
                            {language === 'CN' ? '重试请求' : 'Retry Request'}
                         </button>
                     </div>

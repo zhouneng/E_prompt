@@ -8,6 +8,7 @@ import { TRANSLATIONS } from '../constants';
 
 interface EcommerceKVViewProps {
   onViewImage: (items: LightboxItem[], index: number) => void;
+  onOpenSettings: () => void;
   language: Language;
 }
 
@@ -22,13 +23,14 @@ const STYLE_OPTIONS = [
   { id: 'Organic Nature Style', name: '自然有机', desc: '大地色系、植物元素、环保理念' },
 ];
 
-export const EcommerceKVView: React.FC<EcommerceKVViewProps> = ({ onViewImage, language }) => {
+export const EcommerceKVView: React.FC<EcommerceKVViewProps> = ({ onViewImage, onOpenSettings, language }) => {
   const t = TRANSLATIONS[language].ecommerce;
   
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [appState, setAppState] = useState<AppState>(AppState.IDLE);
   const [resultText, setResultText] = useState<string>("");
+  const [errorMsg, setErrorMsg] = useState<string>("");
   
   // Step State
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
@@ -59,7 +61,7 @@ export const EcommerceKVView: React.FC<EcommerceKVViewProps> = ({ onViewImage, l
       setAppState(AppState.SUCCESS);
       setCurrentStep(3);
     } catch (e: any) {
-      alert(e.message || "Generation failed");
+      setErrorMsg(e.message || "Generation failed");
       setAppState(AppState.ERROR);
     }
   };
@@ -163,6 +165,20 @@ export const EcommerceKVView: React.FC<EcommerceKVViewProps> = ({ onViewImage, l
                        <h3 className="text-2xl font-black text-gray-900 uppercase tracking-tighter">Surgically analyzing your product DNA...</h3>
                        <p className="text-gray-400 text-sm max-w-sm font-medium">Extracting brand essence, identifying core features, and designing 10-poster KV architecture.</p>
                     </div>
+                 </div>
+               ) : appState === AppState.ERROR ? (
+                 <div className="bg-red-50/80 border border-red-100 rounded-[3rem] p-12 flex flex-col items-center justify-center text-center space-y-6 animate-in zoom-in-95 duration-200">
+                    <div className="w-24 h-24 bg-red-100 text-red-500 rounded-full flex items-center justify-center text-4xl font-black">!</div>
+                    <div className="space-y-3 max-w-lg">
+                       <h3 className="text-2xl font-black text-red-700">Strategy Generation Failed</h3>
+                       <p className="text-sm text-red-600 font-medium leading-relaxed">{errorMsg}</p>
+                    </div>
+                    {errorMsg?.includes("Quota") && (
+                       <Button onClick={onOpenSettings} className="bg-red-500 hover:bg-red-600 text-white border-none shadow-lg shadow-red-500/30">
+                          Configure API Key
+                       </Button>
+                    )}
+                    <button onClick={handleGenerate} className="text-red-500 text-xs font-bold hover:underline tracking-widest uppercase mt-4">Retry Operation</button>
                  </div>
                ) : appState === AppState.SUCCESS ? (
                  <div className="animate-in slide-in-from-right-8 duration-700 space-y-8">
